@@ -1,35 +1,43 @@
-use clap::{Command, Parser, Subcommand};
-use miette::{miette, Context, IntoDiagnostic};
-use rust_norg::parse;
+use std::sync::Arc;
 
-use axum::{routing, Router};
+use axum::{
+    extract::{Path, State},
+    response::Redirect,
+    routing, Router,
+};
+use clap::{Parser, Subcommand};
 use dotenv::dotenv;
+use miette::{miette, Context, IntoDiagnostic};
 use tokio::net::TcpListener;
 use tracing::{debug, error, info, level_filters::LevelFilter};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-struct AppState {}
+mod renderer;
 
-async fn index() -> Result<String, http::StatusCode> {
-    let file_path = shellexpand::full("~/.local/share/notes/index.norg").map_err(|e| {
-        error!("failed to expand path: {e}");
-        http::StatusCode::INTERNAL_SERVER_ERROR
-    })?;
-    let content = std::fs::read_to_string(file_path.as_ref())
+#[derive(Debug, Clone)]
+struct AppState {
+    root_dir: std::path::PathBuf,
+}
+
+async fn index(
+    State(state): State<Arc<AppState>>,
+    Path(norg_file_path): Path<std::path::PathBuf>,
+) -> Result<String, http::StatusCode> {
+    let mut file_path = state.root_dir.clone();
+    file_path.push(&norg_file_path);
+    let content = tokio::fs::read_to_string(&file_path)
+        .await
         .into_diagnostic()
-        .wrap_err_with(|| miette!("reading file: {file_path}"))
+        .wrap_err_with(|| miette!("reading file: {file_path:?}"))
         .map_err(|e| {
             error!("failed to read {e}");
             http::StatusCode::NOT_FOUND
         })?;
-    let tokens = parse(&content)
-        .map_err(|e| miette!("failed to parse: {e:?}"))
-        .map_err(|e| {
-            error!("failed to read {e}");
-            http::StatusCode::INTERNAL_SERVER_ERROR
-        })?;
-    debug!("tokens: {tokens:?}");
-    Ok(content)
+    let body = renderer::parse_and_render(&content).await.map_err(|e| {
+        error!("failed to read {e}");
+        http::StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+    Ok(body)
 }
 
 #[derive(Debug, Clone, Subcommand)]
@@ -41,15 +49,30 @@ enum Functionality {
 struct CmdlineArgs {
     #[arg(short, long, global=true, action=clap::ArgAction::Count)]
     verbose: u8,
+    #[arg(short, long)]
+    root_dir: std::path::PathBuf,
     #[command(subcommand)]
     command: Functionality,
 }
 
-async fn serve() -> Result<(), Box<dyn std::error::Error>> {
+async fn serve(root_dir: std::path::PathBuf) -> Result<(), Box<dyn std::error::Error>> {
+    debug!("serving content of {root_dir:?}");
     let app = Router::new()
-        .route("/index.html", routing::get(index))
+        .route(
+            "/",
+            routing::get(|| async { Redirect::to("/read/index.norg") }),
+        )
+        .route(
+            "/read/",
+            routing::get(|| async { Redirect::to("/read/index.norg") }),
+        )
+        .route(
+            "/read",
+            routing::get(|| async { Redirect::to("/read/index.norg") }),
+        )
+        .route("/read/*file_path", routing::get(index))
         .layer(tower_http::trace::TraceLayer::new_for_http())
-        .with_state(std::sync::Arc::new(AppState {}));
+        .with_state(std::sync::Arc::new(AppState { root_dir }));
 
     let listener = TcpListener::bind("0.0.0.0:8080").await?;
     info!("Listening on {:?}", listener.local_addr()?);
@@ -97,7 +120,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     debug!("log level set to {log_level}");
     match args.command {
-        Functionality::Serve => serve().await?,
+        Functionality::Serve => serve(args.root_dir).await?,
     };
     Ok(())
 }
