@@ -2,27 +2,34 @@ use std::sync::Arc;
 
 use axum::{
     extract::{Path, State},
-    response::Redirect,
+    response::{Html, Redirect},
     routing, Router,
 };
 use clap::{Parser, Subcommand};
 use dotenv::dotenv;
 use miette::{miette, Context, IntoDiagnostic};
+use serde::Serialize;
 use tokio::net::TcpListener;
 use tracing::{debug, error, info, level_filters::LevelFilter};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-
 mod renderer;
 
 #[derive(Debug, Clone)]
 struct AppState {
+    hbr: handlebars::Handlebars<'static>,
     root_dir: std::path::PathBuf,
+}
+
+#[derive(Debug, Serialize)]
+struct NorgPage {
+    title: String,
+    body: String,
 }
 
 async fn index(
     State(state): State<Arc<AppState>>,
     Path(norg_file_path): Path<std::path::PathBuf>,
-) -> Result<String, http::StatusCode> {
+) -> Result<Html<String>, http::StatusCode> {
     let mut file_path = state.root_dir.clone();
     file_path.push(&norg_file_path);
     let content = tokio::fs::read_to_string(&file_path)
@@ -33,11 +40,32 @@ async fn index(
             error!("failed to read {e}");
             http::StatusCode::NOT_FOUND
         })?;
-    let body = renderer::parse_and_render(&content).await.map_err(|e| {
-        error!("failed to read {e}");
-        http::StatusCode::INTERNAL_SERVER_ERROR
-    })?;
-    Ok(body)
+    let body = renderer::parse_and_render_body(&content, &state.hbr)
+        .await
+        .map_err(|e| {
+            error!("failed to read {e}");
+            http::StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    debug!("norg page: {body}");
+    let norg_page = NorgPage {
+        title: file_path
+            .file_stem()
+            .expect("norg file without stem cannot be present")
+            .to_string_lossy()
+            .to_string(),
+        body,
+    };
+    let page = state
+        .hbr
+        .render("base", &norg_page)
+        .into_diagnostic()
+        .wrap_err("Couldn't render base template")
+        .map_err(|e| {
+            error!("failed to render: {e}");
+            http::StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+    Ok(Html(page))
 }
 
 #[derive(Debug, Clone, Subcommand)]
@@ -57,6 +85,9 @@ struct CmdlineArgs {
 
 async fn serve(root_dir: std::path::PathBuf) -> Result<(), Box<dyn std::error::Error>> {
     debug!("serving content of {root_dir:?}");
+    let mut handlebars_registry = handlebars::Handlebars::new();
+    let load_options = handlebars::DirectorySourceOptions::default();
+    handlebars_registry.register_templates_directory("./templates", load_options)?;
     let app = Router::new()
         .route(
             "/",
@@ -72,7 +103,10 @@ async fn serve(root_dir: std::path::PathBuf) -> Result<(), Box<dyn std::error::E
         )
         .route("/read/*file_path", routing::get(index))
         .layer(tower_http::trace::TraceLayer::new_for_http())
-        .with_state(std::sync::Arc::new(AppState { root_dir }));
+        .with_state(std::sync::Arc::new(AppState {
+            root_dir,
+            hbr: handlebars_registry,
+        }));
 
     let listener = TcpListener::bind("0.0.0.0:8080").await?;
     info!("Listening on {:?}", listener.local_addr()?);
@@ -107,9 +141,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| {
                 if cfg!(debug_assertions) {
-                    "norg_linter=trace,rust_norg=trace,tower_http=trace,axum::rejection=trace"
+                    "norg_viewer=trace,rust_norg=trace,tower_http=trace,axum::rejection=trace"
                 } else {
-                    "norg_linter=debug,rust_norg=info,tower_http=debug,axum::rejection=info"
+                    "norg_viewer=debug,rust_norg=info,tower_http=debug,axum::rejection=info"
                 }
                 .into()
             }),

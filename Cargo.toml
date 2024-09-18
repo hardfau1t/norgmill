@@ -6,11 +6,13 @@ edition = "2021"
 [dependencies]
 axum = { version = "0.7.5", features = ["tracing", "tower-log"] }
 clap = { version = "4.5.17", features = ["derive"] }
+dashmap = "6.1.0"
 dotenv = { version = "0.15.0", features = ["clap"] }
-handlebars = "6.1.0"
+handlebars = { version = "6.1.0", features = ["dir_source"] }
 http = "1.1.0"
 miette = { version = "7.2.0", features = ["fancy"] }
 rust-norg = { git = "https://github.com/hardfau1t/rust-norg.git", version = "0.1.0" }
+serde = { version = "1.0.210", features = ["derive"] }
 shellexpand = "3.1.0"
 tokio = { version = "1.40.0", features = ["full"] }
 tower-http = { version = "0.5.2", features = ["catch-panic", "metrics", "set-header", "trace"] }
