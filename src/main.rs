@@ -70,7 +70,11 @@ async fn index(
 
 #[derive(Debug, Clone, Subcommand)]
 enum Functionality {
-    Serve,
+    Serve {
+        #[arg(short, long)]
+        /// automatically refresh templates without restarting
+        dev_mode: bool,
+    },
 }
 
 #[derive(Parser, Debug, Clone)]
@@ -83,9 +87,13 @@ struct CmdlineArgs {
     command: Functionality,
 }
 
-async fn serve(root_dir: std::path::PathBuf) -> Result<(), Box<dyn std::error::Error>> {
+async fn serve(
+    root_dir: std::path::PathBuf,
+    dev_mode: bool,
+) -> Result<(), Box<dyn std::error::Error>> {
     debug!("serving content of {root_dir:?}");
     let mut handlebars_registry = handlebars::Handlebars::new();
+    handlebars_registry.set_dev_mode(dev_mode);
     let load_options = handlebars::DirectorySourceOptions::default();
     handlebars_registry.register_templates_directory("./templates", load_options)?;
     let app = Router::new()
@@ -154,7 +162,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     debug!("log level set to {log_level}");
     match args.command {
-        Functionality::Serve => serve(args.root_dir).await?,
+        Functionality::Serve { dev_mode } => serve(args.root_dir, dev_mode).await?,
     };
     Ok(())
 }
