@@ -1,15 +1,16 @@
 use handlebars::Handlebars;
 use miette::{Context, IntoDiagnostic};
-use rust_norg::{parse, LinkTarget, NorgASTFlat, ParagraphSegment, ParagraphSegmentToken};
 use serde::Serialize;
 use std::fmt::Write;
-use tracing::{debug, instrument, warn};
+use tracing::{debug, warn};
+
+mod link;
 
 pub async fn parse_and_render_body<'h>(
     input: &str,
     hbr: &Handlebars<'h>,
 ) -> miette::Result<String> {
-    let tokens = parse(&input).map_err(|e| miette::miette!("failed to parse: {e:?}"))?;
+    let tokens = norg::parse(&input).map_err(|e| miette::miette!("failed to parse: {e:?}"))?;
     debug!("found tokens: {tokens:#?}");
     tokens.into_iter().map(|ast| render_ast(ast, hbr)).collect()
 }
@@ -19,10 +20,10 @@ struct Para {
     para: String,
 }
 
-fn render_ast(ast: NorgASTFlat, hbr: &Handlebars) -> miette::Result<String> {
+fn render_ast(ast: norg::NorgASTFlat, hbr: &Handlebars) -> miette::Result<String> {
     let mut rendered_string = String::new();
     match ast {
-        NorgASTFlat::Paragraph(p) => {
+        norg::NorgASTFlat::Paragraph(p) => {
             let mut para = String::new();
             p.into_iter()
                 .map(|segment| render_paragraph(segment, &mut para, hbr))
@@ -41,46 +42,17 @@ fn render_ast(ast: NorgASTFlat, hbr: &Handlebars) -> miette::Result<String> {
     Ok(rendered_string)
 }
 
-#[instrument()]
-fn generate_link<'a>(
-    file_path: Option<String>,
-    targets: Vec<LinkTarget>,
-    description: Option<Vec<ParagraphSegment>>,
-) -> Link {
-    if let Some(norgfile_path) = file_path {
-        debug!("link to another norg file");
-        let target = if norgfile_path.ends_with(".norg") {
-            norgfile_path
-        } else {
-            format!("{}.norg", norgfile_path)
-        };
-        let description = target.clone();
-        Link {
-            target,
-            description,
-        }
-    } else {
-        debug!("not yet parsed link");
-        todo!()
-    }
-}
-
-#[derive(Debug, Serialize)]
-struct Link {
-    target: String,
-    description: String,
-}
 fn render_paragraph(
-    para: ParagraphSegment,
+    para: norg::ParagraphSegment,
     write_to: &mut String,
     hbr: &Handlebars,
 ) -> std::fmt::Result {
     // TODO: convert this to miette error
     match para {
-        ParagraphSegment::Token(ParagraphSegmentToken::Text(t)) => write!(write_to, "{}", t),
-        ParagraphSegment::Token(ParagraphSegmentToken::Whitespace) => write!(write_to, " "),
-        ParagraphSegment::Token(ParagraphSegmentToken::Special(chr))
-        | ParagraphSegment::Token(ParagraphSegmentToken::Escape(chr)) => {
+        norg::ParagraphSegment::Token(norg::ParagraphSegmentToken::Text(t)) => write!(write_to, "{}", t),
+        norg::ParagraphSegment::Token(norg::ParagraphSegmentToken::Whitespace) => write!(write_to, " "),
+        norg::ParagraphSegment::Token(norg::ParagraphSegmentToken::Special(chr))
+        | norg::ParagraphSegment::Token(norg::ParagraphSegmentToken::Escape(chr)) => {
             debug!("treating {para:?} as normal, at this point not sure whether norg-parser handles this or this crate, raise a bug if this is an issue");
             write!(write_to, "{}", chr)
         }
@@ -93,15 +65,12 @@ fn render_paragraph(
         //ParagraphSegment::AnchorDefinition { content, target } => todo!(),
         //ParagraphSegment::Anchor { content, description } => todo!(),
         //ParagraphSegment::InlineLinkTarget(_) => todo!(),
-        ParagraphSegment::Link {
+        norg::ParagraphSegment::Link {
             filepath,
             targets,
             description,
         } => {
-            let link = generate_link(filepath, targets, description);
-            let rendered_link = hbr
-                .render("link", &link)
-                .expect("change this to error type");
+            let rendered_link = link::render_link(filepath, targets, description, hbr);
             write!(write_to, "{}", rendered_link)
         }
         _ => {
