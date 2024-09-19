@@ -8,6 +8,14 @@ use super::paragraph;
 type Modifier = char;
 
 #[derive(Serialize)]
+struct Strike {
+    text: String,
+}
+#[derive(Serialize)]
+struct Underline {
+    text: String,
+}
+#[derive(Serialize)]
 struct Bold {
     text: String,
 }
@@ -47,6 +55,22 @@ pub fn render_attached(
                 text: segments_collector,
             };
             hbr.render("italic", &bold)
+                .expect("Couldn't render bold text")
+        }
+        '-' => {
+            trace!("rendering striked text");
+            let bold = Strike {
+                text: segments_collector,
+            };
+            hbr.render("strike", &bold)
+                .expect("Couldn't render bold text")
+        }
+        '_' => {
+            trace!("rendering underlined text");
+            let bold = Underline {
+                text: segments_collector,
+            };
+            hbr.render("underline", &bold)
                 .expect("Couldn't render bold text")
         }
         _ => {
