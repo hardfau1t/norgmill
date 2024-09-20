@@ -75,6 +75,9 @@ enum Functionality {
         /// automatically refresh templates without restarting
         dev_mode: bool,
     },
+    DumpAst {
+        path: std::path::PathBuf,
+    },
 }
 
 #[derive(Parser, Debug, Clone)]
@@ -163,6 +166,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     debug!("log level set to {log_level}");
     match args.command {
         Functionality::Serve { dev_mode } => serve(args.root_dir, dev_mode).await?,
+        Functionality::DumpAst { path } => {
+            let mut absolute_path = args.root_dir.clone();
+            absolute_path.push(path);
+            renderer::dump_ast(absolute_path).await?
+        }
     };
     Ok(())
 }
