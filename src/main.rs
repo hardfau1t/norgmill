@@ -74,6 +74,8 @@ enum Functionality {
         #[arg(short, long)]
         /// automatically refresh templates without restarting
         dev_mode: bool,
+        #[arg(short, long)]
+        root_dir: std::path::PathBuf,
     },
     DumpAst {
         path: std::path::PathBuf,
@@ -84,8 +86,6 @@ enum Functionality {
 struct CmdlineArgs {
     #[arg(short, long, global=true, action=clap::ArgAction::Count)]
     verbose: u8,
-    #[arg(short, long)]
-    root_dir: std::path::PathBuf,
     #[command(subcommand)]
     command: Functionality,
 }
@@ -165,11 +165,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     debug!("log level set to {log_level}");
     match args.command {
-        Functionality::Serve { dev_mode } => serve(args.root_dir, dev_mode).await?,
+        Functionality::Serve { dev_mode , root_dir} => serve(root_dir, dev_mode).await?,
         Functionality::DumpAst { path } => {
-            let mut absolute_path = args.root_dir.clone();
-            absolute_path.push(path);
-            renderer::dump_ast(absolute_path).await?
+            renderer::dump_ast(path).await?
         }
     };
     Ok(())
