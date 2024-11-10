@@ -40,12 +40,10 @@ async fn index(
             error!("failed to read {e}");
             http::StatusCode::NOT_FOUND
         })?;
-    let body = renderer::parse_and_render_body(&content, &state.hbr)
-        .await
-        .map_err(|e| {
-            error!("failed to read {e}");
-            http::StatusCode::INTERNAL_SERVER_ERROR
-        })?;
+    let body = renderer::parse_and_render_body(&content, &state.hbr).map_err(|e| {
+        error!("failed to read {e}");
+        http::StatusCode::INTERNAL_SERVER_ERROR
+    })?;
 
     debug!("norg page: {body}");
     let norg_page = NorgPage {
@@ -165,10 +163,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     debug!("log level set to {log_level}");
     match args.command {
-        Functionality::Serve { dev_mode , root_dir} => serve(root_dir, dev_mode).await?,
-        Functionality::DumpAst { path } => {
-            renderer::dump_ast(path).await?
-        }
+        Functionality::Serve { dev_mode, root_dir } => serve(root_dir, dev_mode).await?,
+        Functionality::DumpAst { path } => renderer::dump_ast(path).await?,
     };
     Ok(())
 }

@@ -2,7 +2,7 @@ use handlebars::Handlebars;
 use std::fmt::Write;
 use tracing::{debug, warn};
 
-use super::{link, basic};
+use super::{basic, link};
 
 pub fn render_paragraph(
     para: norg::ParagraphSegment,

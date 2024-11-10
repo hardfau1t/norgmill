@@ -8,10 +8,7 @@ mod heading;
 mod link;
 mod paragraph;
 
-pub async fn parse_and_render_body<'h>(
-    input: &str,
-    hbr: &Handlebars<'h>,
-) -> miette::Result<String> {
+pub fn parse_and_render_body<'h>(input: &str, hbr: &Handlebars<'h>) -> miette::Result<String> {
     let tokens = norg::parse(&input).map_err(|e| miette::miette!("failed to parse: {e:?}"))?;
     debug!("found tokens: {tokens:#?}");
     tokens.into_iter().map(|ast| render_ast(ast, hbr)).collect()
@@ -70,4 +67,24 @@ fn render_ast(ast: norg::NorgASTFlat, hbr: &Handlebars) -> miette::Result<String
         }
     };
     Ok(rendered_string)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::parse_and_render_body;
+
+    #[test]
+    fn link_to_norg_file() {
+        let content = "{:abc/def:}[link to def]";
+        let expected = "<p><a href=\"abc/def.norg\">link to def</a></p>";
+        let mut hbr = handlebars::Handlebars::new();
+        let load_options = handlebars::DirectorySourceOptions::default();
+        hbr.register_templates_directory("./templates", load_options)
+            .expect("couldn't load handlebars");
+        assert_eq!(
+            parse_and_render_body(content, &hbr).expect("couldn't parse content"),
+            expected,
+            "html with a paragraph pointing to another norg file"
+        );
+    }
 }

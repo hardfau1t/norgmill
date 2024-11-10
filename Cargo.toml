@@ -11,7 +11,7 @@ dotenv = { version = "0.15.0", features = ["clap"] }
 handlebars = { version = "6.1.0", features = ["dir_source"] }
 http = "1.1.0"
 miette = { version = "7.2.0", features = ["fancy"] }
-norg = { git = "https://github.com/hardfau1t/rust-norg.git", version = "0.1.0", package = "rust-norg"}
+norg = { git = "https://github.com/nvim-neorg/rust-norg.git", version = "0.1.0", package = "rust-norg"}
 serde = { version = "1.0.210", features = ["derive"] }
 shellexpand = "3.1.0"
 tokio = { version = "1.40.0", features = ["full"] }
