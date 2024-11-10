@@ -1,0 +1,9 @@
+<script id="heading-template" type="text/x-handlebars-template">
+    <div class="heading-container level-{{level}}" style="margin-left: {{calcIndent level}}px;">
+        <h1 class="heading-level-{{level}}">{{content}}</h1>
+        <div class="content">
+            {{#each subcontent}}
+                <p>{{this}}</p>
+            {{/each}}
+        </div>
+    </div></script>
