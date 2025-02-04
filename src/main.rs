@@ -13,6 +13,7 @@ use tokio::net::TcpListener;
 use tracing::{debug, error, info, level_filters::LevelFilter};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 mod renderer;
+mod constants;
 
 #[derive(Debug, Clone)]
 struct AppState {
@@ -98,20 +99,22 @@ async fn serve(
     let load_options = handlebars::DirectorySourceOptions::default();
     handlebars_registry.register_templates_directory("./templates", load_options)?;
     renderer::registser_helpers(&mut handlebars_registry);
+    // TODO: change these workspace to constant
+    // probably create another router for accessing workspace
     let app = Router::new()
         .route(
             "/",
-            routing::get(|| async { Redirect::to("/read/index.norg") }),
+            routing::get(|| async { Redirect::to("/workspace/index.norg") }),
         )
         .route(
-            "/read/",
-            routing::get(|| async { Redirect::to("/read/index.norg") }),
+            "/workspace/",
+            routing::get(|| async { Redirect::to("/workspace/index.norg") }),
         )
         .route(
-            "/read",
-            routing::get(|| async { Redirect::to("/read/index.norg") }),
+            "/workspace",
+            routing::get(|| async { Redirect::to("/workspace/index.norg") }),
         )
-        .route("/read/*file_path", routing::get(index))
+        .route("/workspace/*file_path", routing::get(index))
         .layer(tower_http::trace::TraceLayer::new_for_http())
         .with_state(std::sync::Arc::new(AppState {
             root_dir,

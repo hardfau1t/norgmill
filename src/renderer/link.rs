@@ -33,9 +33,37 @@ impl Link {
         } else {
             Ok(rendered_target.clone())
         }?;
-        if let Some(norgfile_path) = file_path {
+        if let Some(mut norgfile_path) = file_path {
             debug!("link to another norg file");
-            let mut target_link = format!("{}.norg", norgfile_path);
+            let mut target_link = match norgfile_path.chars().next() {
+                Some('$') => {
+                    // start from workspace root
+                    let mut path = format!("/{}/", crate::constants::WORKSPACE_PATH);
+                    path.push_str(
+                        norgfile_path
+                            .trim_start_matches('$')
+                            .trim_start_matches('/'),
+                    );
+                    path.push_str(".norg");
+                    path
+                }
+                Some('/') => {
+                    // start from workspace root
+                    let mut path = format!("/{}/", crate::constants::SYSTEM_PATH.to_string());
+                    path.push_str(norgfile_path.trim_start_matches('/'));
+                    path.push_str(".norg");
+                    path
+                }
+                Some(c) => {
+                    debug!("file path starts from {c}, should be relative to current file");
+                    norgfile_path.push_str(".norg");
+                    norgfile_path
+                }
+                None => {
+                    warn!("empty file link found, don't know what to do");
+                    norgfile_path
+                }
+            };
             // if there is only link to file then target will be empty
             if !rendered_target.is_empty() {
                 target_link.push('#');
