@@ -44,7 +44,7 @@ pub fn render_paragraph(
             description,
         } => {
             let rendered_link = link::render_link(filepath, targets, description, hbr);
-            write!(write_to, "{}", rendered_link)
+            write!(write_to, "{}", rendered_link.expect("failed generate link, convert it to error later"))
         }
         _ => {
             warn!("rendering para segment {para:?} is not yet implemented");

@@ -8,22 +8,21 @@ use tracing::{debug, instrument, trace, warn};
 struct Heading {
     title: String,
     level: u16,
-    content: Vec<String>,
+    content: String,
 }
 
-#[instrument(skip(extensions, title, write_to, hbr))]
 pub fn render_heading(
     level: u16,
     title: Vec<norg::ParagraphSegment>,
     extensions: Vec<norg::DetachedModifierExtension>,
-    content: Vec<String>,
+    content: String,
     write_to: &mut String,
     hbr: &Handlebars,
 ) -> std::fmt::Result {
     if !extensions.is_empty() {
         warn!("not rendering extensions: {extensions:?}, its not supported yet");
     }
-    trace!("rendering heading");
+    debug!("rendering heading: title {title:?}, with _content: {content:?}, extensions: {extensions:?}");
     let title_text = title
         .into_iter()
         .try_fold(String::new(), |mut acc, segment| {

@@ -62,7 +62,6 @@ struct Comment {
     text: String,
 }
 
-#[instrument(skip(write_to, hbr, content))]
 pub fn render_attached(
     modifier: Modifier,
     content: Vec<norg::ParagraphSegment>,

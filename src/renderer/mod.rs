@@ -1,3 +1,5 @@
+use std::backtrace::Backtrace;
+
 use handlebars::Handlebars;
 use miette::{Context, IntoDiagnostic};
 use serde::Serialize;
@@ -5,13 +7,47 @@ use tracing::{debug, instrument, warn};
 
 mod basic;
 mod heading;
+mod html_list;
 mod link;
 mod paragraph;
+mod quote;
+
+#[derive(Debug, Default)]
+struct NorgContext {
+    /// active ordered/unordered entries list
+    active_html_list: Option<html_list::HtmlList>,
+}
+impl NorgContext {
+    fn flush(&mut self, write_to: &mut String, hbr: &Handlebars) -> miette::Result<()> {
+        if let Some(html_list) = self.active_html_list.take() {
+            html_list.render(write_to, hbr)?
+        };
+        Ok(())
+    }
+}
+
+impl Drop for NorgContext {
+    fn drop(&mut self) {
+        if let Some(active_list) = self.active_html_list.take() {
+            warn!("Dropping html list items: {active_list:?}");
+            debug!("Backtrace: {}", Backtrace::capture());
+        }
+    }
+}
 
 pub fn parse_and_render_body<'h>(input: &str, hbr: &Handlebars<'h>) -> miette::Result<String> {
     let tokens = norg::parse_tree(&input).map_err(|e| miette::miette!("failed to parse: {e:?}"))?;
     debug!("found tokens: {tokens:#?}");
-    tokens.into_iter().map(|ast| render_ast(ast, hbr)).collect()
+
+    let mut context = NorgContext::default();
+
+    let mut rendered_string = tokens
+        .into_iter()
+        .map(|ast| render_ast(ast, &mut context, hbr))
+        .collect::<Result<_, _>>()?;
+    context.flush(&mut rendered_string, hbr)?;
+    // cleanup context if there are any pending items
+    Ok(rendered_string)
 }
 
 pub async fn dump_ast(path: std::path::PathBuf) -> miette::Result<()> {
@@ -29,9 +65,22 @@ struct Para {
     para: String,
 }
 
-#[instrument(skip(hbr))]
-fn render_ast(ast: norg::NorgAST, hbr: &Handlebars) -> miette::Result<String> {
+fn render_ast(
+    ast: norg::NorgAST,
+    context: &mut NorgContext,
+    hbr: &Handlebars,
+) -> miette::Result<String> {
     let mut rendered_string = String::new();
+
+    // first check if there are any liste items from the previous step are present
+    if let Some(html_list) = context
+        .active_html_list
+        .take_if(|list| !list.expected(&ast))
+    {
+        // there exists a html list but current item is not part of that list so render that item
+        html_list.render(&mut rendered_string, hbr)?
+    };
+
     match ast {
         norg::NorgAST::Paragraph(p) => {
             let mut para = String::new();
@@ -47,28 +96,50 @@ fn render_ast(ast: norg::NorgAST, hbr: &Handlebars) -> miette::Result<String> {
                 .wrap_err("Failed to render paragraph")?;
             rendered_string.push_str(&rendered_para);
         }
-        //norg::NorgASTFlat::NestableDetachedModifier {
+        norg::NorgAST::NestableDetachedModifier {
+            modifier_type,
+            level,
+            extensions,
+            text,
+            content,
+        } => match modifier_type {
+            norg::NestableDetachedModifier::Quote => {
+                quote::render_quote(level, extensions, text, content, &mut rendered_string, hbr)
+            }
+            // no need to check if the item is of different type, if it is then it will be flushed at the beginning of the loop
+            _ => context
+                .active_html_list
+                .get_or_insert(html_list::HtmlList::new(level, modifier_type))
+                .push(text, content, extensions, hbr),
+        }?,
+
+        //norg::NorgAST::RangeableDetachedModifier {
         //    modifier_type,
-        //    level,
+        //    title,
         //    extensions,
         //    content,
         //} => todo!(),
-        //norg::NorgASTFlat::RangeableDetachedModifier { modifier_type, title, extensions, content } => todo!(),
         norg::NorgAST::Heading {
             level,
             title,
             extensions,
             content,
         } => {
-            let rendered_content = content
-                .into_iter()
-                .map(|content_ast| render_ast(content_ast, hbr))
-                .collect::<Result<_, _>>()?;
+            let mut heading_context = NorgContext::default();
+            let mut heading_content = content.into_iter().try_fold(
+                String::new(),
+                |mut acc, content_ast| -> miette::Result<String> {
+                    let rendered_item = render_ast(content_ast, &mut heading_context, hbr)?;
+                    acc.push_str(&rendered_item);
+                    Ok(acc)
+                },
+            )?;
+            heading_context.flush(&mut heading_content, hbr)?;
             heading::render_heading(
                 level,
                 title,
                 extensions,
-                rendered_content,
+                heading_content,
                 &mut rendered_string,
                 hbr,
             )
@@ -80,7 +151,7 @@ fn render_ast(ast: norg::NorgAST, hbr: &Handlebars) -> miette::Result<String> {
         //norg::NorgASTFlat::RangedTag { name, parameters, content } => todo!(),
         //norg::NorgASTFlat::InfirmTag { name, parameters } => todo!(),
         _ => {
-            warn!("Rendering is not implemented for this item");
+            warn!("Rendering is not implemented for {ast:?} item");
         }
     };
     Ok(rendered_string)
