@@ -1,9 +1,7 @@
-<div class="heading-container level-{{level}}" style="margin-left: {{heading_indent_level level}}px;">
-    <h1 class="heading-level-{{level}}">{{title}}</h1>
-    <div class="content">
-        {{#each subcontent}}
-            <p>{{this}}</p>
-        {{/each}}
-    </div>
+<div class="content"  style="margin-left: {{heading_indent_level level}}em;">
+<h{{level}}>{{title}}</h{{level}}>
+    {{#each content}}
+        <p>{{{this}}}</p>
+    {{/each}}
 </div>
 
