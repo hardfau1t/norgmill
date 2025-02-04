@@ -1,7 +1,7 @@
 use handlebars::Handlebars;
 use miette::{Context, IntoDiagnostic};
 use serde::Serialize;
-use tracing::{debug, instrument, trace, warn};
+use tracing::{debug, instrument, warn};
 
 mod basic;
 mod heading;
@@ -9,7 +9,7 @@ mod link;
 mod paragraph;
 
 pub fn parse_and_render_body<'h>(input: &str, hbr: &Handlebars<'h>) -> miette::Result<String> {
-    let tokens = norg::parse(&input).map_err(|e| miette::miette!("failed to parse: {e:?}"))?;
+    let tokens = norg::parse_tree(&input).map_err(|e| miette::miette!("failed to parse: {e:?}"))?;
     debug!("found tokens: {tokens:#?}");
     tokens.into_iter().map(|ast| render_ast(ast, hbr)).collect()
 }
@@ -30,10 +30,10 @@ struct Para {
 }
 
 #[instrument(skip(hbr))]
-fn render_ast(ast: norg::NorgASTFlat, hbr: &Handlebars) -> miette::Result<String> {
+fn render_ast(ast: norg::NorgAST, hbr: &Handlebars) -> miette::Result<String> {
     let mut rendered_string = String::new();
     match ast {
-        norg::NorgASTFlat::Paragraph(p) => {
+        norg::NorgAST::Paragraph(p) => {
             let mut para = String::new();
             p.into_iter()
                 .map(|segment| paragraph::render_paragraph(segment, &mut para, hbr))
@@ -54,14 +54,26 @@ fn render_ast(ast: norg::NorgASTFlat, hbr: &Handlebars) -> miette::Result<String
         //    content,
         //} => todo!(),
         //norg::NorgASTFlat::RangeableDetachedModifier { modifier_type, title, extensions, content } => todo!(),
-        norg::NorgASTFlat::Heading {
+        norg::NorgAST::Heading {
             level,
             title,
             extensions,
+            content,
         } => {
-            heading::render_heading(level, title, extensions, &mut rendered_string, hbr)
-                .into_diagnostic()
-                .wrap_err("Failed to construct paragraph")?;
+            let rendered_content = content
+                .into_iter()
+                .map(|content_ast| render_ast(content_ast, hbr))
+                .collect::<Result<_, _>>()?;
+            heading::render_heading(
+                level,
+                title,
+                extensions,
+                rendered_content,
+                &mut rendered_string,
+                hbr,
+            )
+            .into_diagnostic()
+            .wrap_err("Failed to construct paragraph")?;
         }
         //norg::NorgASTFlat::CarryoverTag { tag_type, name, parameters, next_object } => todo!(),
         //norg::NorgASTFlat::VerbatimRangedTag { name, parameters, content } => todo!(),
@@ -72,6 +84,11 @@ fn render_ast(ast: norg::NorgASTFlat, hbr: &Handlebars) -> miette::Result<String
         }
     };
     Ok(rendered_string)
+}
+
+/// register all the helpers from submodule
+pub fn registser_helpers(hbr: &mut handlebars::Handlebars) {
+    heading::registser_helpers(hbr);
 }
 
 #[cfg(test)]

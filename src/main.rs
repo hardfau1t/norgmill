@@ -97,6 +97,7 @@ async fn serve(
     handlebars_registry.set_dev_mode(dev_mode);
     let load_options = handlebars::DirectorySourceOptions::default();
     handlebars_registry.register_templates_directory("./templates", load_options)?;
+    renderer::registser_helpers(&mut handlebars_registry);
     let app = Router::new()
         .route(
             "/",
