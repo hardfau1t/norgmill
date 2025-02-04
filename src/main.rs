@@ -10,10 +10,10 @@ use dotenv::dotenv;
 use miette::{miette, Context, IntoDiagnostic};
 use serde::Serialize;
 use tokio::net::TcpListener;
-use tracing::{debug, error, info, level_filters::LevelFilter};
+use tracing::{debug, error, info, instrument, level_filters::LevelFilter, trace};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-mod renderer;
 mod constants;
+mod renderer;
 
 #[derive(Debug, Clone)]
 struct AppState {
@@ -27,12 +27,12 @@ struct NorgPage {
     body: String,
 }
 
-async fn index(
-    State(state): State<Arc<AppState>>,
-    Path(norg_file_path): Path<std::path::PathBuf>,
+#[instrument(skip(hbr))]
+async fn render_norg_file<'a>(
+    file_path: std::path::PathBuf,
+    hbr: &'a handlebars::Handlebars<'a>,
 ) -> Result<Html<String>, http::StatusCode> {
-    let mut file_path = state.root_dir.clone();
-    file_path.push(&norg_file_path);
+    trace!("rendering norg file");
     let content = tokio::fs::read_to_string(&file_path)
         .await
         .into_diagnostic()
@@ -41,7 +41,7 @@ async fn index(
             error!("failed to read {e}");
             http::StatusCode::NOT_FOUND
         })?;
-    let body = renderer::parse_and_render_body(&content, &state.hbr).map_err(|e| {
+    let body = renderer::parse_and_render_body(&content, hbr).map_err(|e| {
         error!("failed to read {e}");
         http::StatusCode::INTERNAL_SERVER_ERROR
     })?;
@@ -55,8 +55,7 @@ async fn index(
             .to_string(),
         body,
     };
-    let page = state
-        .hbr
+    let page = hbr
         .render("base", &norg_page)
         .into_diagnostic()
         .wrap_err("Couldn't render base template")
@@ -65,6 +64,31 @@ async fn index(
             http::StatusCode::INTERNAL_SERVER_ERROR
         })?;
     Ok(Html(page))
+}
+
+
+async fn system_files(
+    State(state): State<Arc<AppState>>,
+    Path(system_path): Path<std::path::PathBuf>,
+) -> Result<Html<String>, http::StatusCode> {
+    trace!("service system files: {system_path:?}");
+    // this is required because `system_path` will not contain / at the beginning
+    let mut file_path = std::path::PathBuf::from("/");
+    file_path.push(system_path);
+    if file_path.extension().is_some_and(|e| e == "norg") {
+        render_norg_file(file_path, &state.hbr).await
+    } else {
+        Err(http::StatusCode::NOT_IMPLEMENTED)
+    }
+}
+
+async fn index(
+    State(state): State<Arc<AppState>>,
+    Path(norg_file_path): Path<std::path::PathBuf>,
+) -> Result<Html<String>, http::StatusCode> {
+    let mut file_path = state.root_dir.clone();
+    file_path.push(&norg_file_path);
+    render_norg_file(file_path, &state.hbr).await
 }
 
 #[derive(Debug, Clone, Subcommand)]
@@ -115,6 +139,10 @@ async fn serve(
             routing::get(|| async { Redirect::to("/workspace/index.norg") }),
         )
         .route("/workspace/*file_path", routing::get(index))
+        .route(
+            &format!("/{}/*file_path", constants::SYSTEM_PATH),
+            routing::get(system_files),
+        )
         .layer(tower_http::trace::TraceLayer::new_for_http())
         .with_state(std::sync::Arc::new(AppState {
             root_dir,
