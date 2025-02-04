@@ -1,7 +1,7 @@
 use handlebars::Handlebars;
 use miette::{Context, IntoDiagnostic};
 use serde::Serialize;
-use tracing::{debug, trace, warn};
+use tracing::{debug, instrument, trace, warn};
 
 mod basic;
 mod heading;
@@ -29,6 +29,7 @@ struct Para {
     para: String,
 }
 
+#[instrument(skip(hbr))]
 fn render_ast(ast: norg::NorgASTFlat, hbr: &Handlebars) -> miette::Result<String> {
     let mut rendered_string = String::new();
     match ast {
@@ -46,15 +47,19 @@ fn render_ast(ast: norg::NorgASTFlat, hbr: &Handlebars) -> miette::Result<String
                 .wrap_err("Failed to render paragraph")?;
             rendered_string.push_str(&rendered_para);
         }
-        //norg::NorgASTFlat::NestableDetachedModifier { modifier_type, level, extensions, content } => todo!(),
+        //norg::NorgASTFlat::NestableDetachedModifier {
+        //    modifier_type,
+        //    level,
+        //    extensions,
+        //    content,
+        //} => todo!(),
         //norg::NorgASTFlat::RangeableDetachedModifier { modifier_type, title, extensions, content } => todo!(),
         norg::NorgASTFlat::Heading {
             level,
             title,
             extensions,
         } => {
-            let mut heading_string = String::new();
-            heading::render_heading(level, title, extensions, &mut heading_string, hbr)
+            heading::render_heading(level, title, extensions, &mut rendered_string, hbr)
                 .into_diagnostic()
                 .wrap_err("Failed to construct paragraph")?;
         }
@@ -63,7 +68,7 @@ fn render_ast(ast: norg::NorgASTFlat, hbr: &Handlebars) -> miette::Result<String
         //norg::NorgASTFlat::RangedTag { name, parameters, content } => todo!(),
         //norg::NorgASTFlat::InfirmTag { name, parameters } => todo!(),
         _ => {
-            warn!("rendering ast {ast:?} is not yet implemented");
+            warn!("Rendering is not implemented for this item");
         }
     };
     Ok(rendered_string)
