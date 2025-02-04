@@ -3,7 +3,7 @@
 use crate::renderer::paragraph;
 use miette::{Context, IntoDiagnostic};
 use serde::Serialize;
-use tracing::{debug, instrument, warn};
+use tracing::{debug, instrument, warn, trace};
 
 #[derive(Debug, Serialize)]
 struct Link {
@@ -33,37 +33,8 @@ impl Link {
         } else {
             Ok(rendered_target.clone())
         }?;
-        if let Some(mut norgfile_path) = file_path {
-            debug!("link to another norg file");
-            let mut target_link = match norgfile_path.chars().next() {
-                Some('$') => {
-                    // start from workspace root
-                    let mut path = format!("/{}/", crate::constants::WORKSPACE_PATH);
-                    path.push_str(
-                        norgfile_path
-                            .trim_start_matches('$')
-                            .trim_start_matches('/'),
-                    );
-                    path.push_str(".norg");
-                    path
-                }
-                Some('/') => {
-                    // start from workspace root
-                    let mut path = format!("/{}/", crate::constants::SYSTEM_PATH.to_string());
-                    path.push_str(norgfile_path.trim_start_matches('/'));
-                    path.push_str(".norg");
-                    path
-                }
-                Some(c) => {
-                    debug!("file path starts from {c}, should be relative to current file");
-                    norgfile_path.push_str(".norg");
-                    norgfile_path
-                }
-                None => {
-                    warn!("empty file link found, don't know what to do");
-                    norgfile_path
-                }
-            };
+        if let Some(norgfile_path) = file_path {
+            let mut target_link = parse_norg_path(norgfile_path);
             // if there is only link to file then target will be empty
             if !rendered_target.is_empty() {
                 target_link.push('#');
@@ -101,7 +72,7 @@ fn render_target(
     write_to: &mut String,
     hbr: &handlebars::Handlebars,
 ) -> miette::Result<()> {
-    let mut render_paras = |title: Vec<norg::ParagraphSegment>, dest: &mut String| {
+    let render_paras = |title: Vec<norg::ParagraphSegment>, dest: &mut String| {
         title
             .into_iter()
             .map(|segment| {
@@ -147,4 +118,51 @@ fn render_target(
         }
     }
     Ok(())
+}
+
+/// Parses file links and generates respective link
+fn parse_norg_path(mut original_path: String) -> String {
+    debug!("link to another norg file");
+    let mut original_path_chars = original_path.chars();
+    match original_path_chars.next() {
+        Some('$') => {
+            if !original_path_chars.next().is_some_and(|c| c == '/') {
+                warn!("linking to different workspace is not yet supported, assuming as current workspace");
+            }
+            // start from workspace root
+            let mut path = format!("/{}/", crate::constants::WORKSPACE_PATH);
+            path.push_str(
+                original_path
+                    .trim_start_matches('$')
+                    .trim_start_matches('/'),
+            );
+            path.push_str(".norg");
+            path
+        }
+        Some('/') => {
+            // start from workspace root
+            let mut path = format!("/{}/", crate::constants::SYSTEM_PATH.to_string());
+            path.push_str(original_path.trim_start_matches('/'));
+            if !original_path_chars
+                .next()
+                .is_some_and(|c| c.is_whitespace())
+            {
+                // this is a link to system level norg file
+                path.push_str(".norg");
+            } else {
+                // if there was a space then its non norg file so no need to append anything
+                trace!("system level non norg file link: {path} generated");
+            }
+            path
+        }
+        Some(c) => {
+            debug!("file path starts from {c}, should be relative to current file");
+            original_path.push_str(".norg");
+            original_path
+        }
+        None => {
+            warn!("empty file link found, don't know what to do");
+            original_path
+        }
+    }
 }
