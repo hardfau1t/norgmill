@@ -20,7 +20,7 @@
             padding: 20px;
         }
         .button-container {
-            text-align: right; /* Aligns content to the right */
+            text-align: left; /* Aligns content to the right */
             padding: 20px; /* Adds some spacing */
         }
 
@@ -61,14 +61,40 @@
             font-weight: bold;
             margin-bottom: 0.5rem;
         }
+                .metadata {
+            font-size: 14px;
+            margin: 1rem 0;
+            color: #4a5568;
+        }
+
+        /* Used to display document metadata */
+        /* Minimal style */
+        .metadata-minimal {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem 1rem;
+            padding: 0.5rem;
+            background: #f8fafc;
+            border-radius: 4px;
+        }
+
+        /* Subtle style */
+        .metadata-subtle {
+            border-left: 3px solid #e2e8f0;
+            padding-left: 0.75rem;
+            line-height: 1.6;
+        }
+        .metadata-subtle .meta-group {
+            color: #64748b;
+        }
     </style>
 </head>
 <body>
-    <div class="button-container">
-        <a href="/" class="home-button">Home</a>
-    </div>
     <p>
         {{{body}}}
     </p>
+    <div class="button-container">
+        <a href="/" class="home-button">Home</a>
+    </div>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
 </body></html>

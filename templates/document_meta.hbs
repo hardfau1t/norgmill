@@ -1,0 +1,15 @@
+    <div class="metadata metadata-minimal">
+        <div>👤 {{author}}</div>
+        <div>📂 
+            {{#each categories}}
+                {{{this}}},
+            {{/each}}
+        </div>
+        <div>🕒 Created {{created}}</div>
+        <div>📌 {{version}}</div>
+    </div>
+
+    <div class="metadata metadata-subtle">
+        <div class="meta-group">{{{description}}}</div>
+        <div class="meta-group">Last updated {{{updated}}}</div>
+    </div>
