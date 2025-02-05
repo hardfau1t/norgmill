@@ -34,7 +34,7 @@ struct Spoiler {
 
 #[derive(Serialize)]
 struct InlineCode {
-    text: String,
+    code: String,
 }
 
 #[derive(Serialize)]
@@ -120,7 +120,7 @@ pub fn render_attached(
         '`' => {
             trace!("rendering inline code");
             let inline = InlineCode {
-                text: segments_collector,
+                code: segments_collector,
             };
             hbr.render("inline-code", &inline)
                 .expect("Couldn't render inline code")

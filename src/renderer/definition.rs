@@ -27,7 +27,6 @@ pub fn render_definition(
         String::new(),
         |mut acc, segment| -> miette::Result<String> {
             paragraph::render_paragraph(segment, &mut acc, hbr)
-                .into_diagnostic()
                 .wrap_err("Couldn't render definition title")?;
             Ok(acc)
         },

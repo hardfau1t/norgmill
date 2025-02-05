@@ -26,7 +26,6 @@ impl Link {
                 .into_iter()
                 .try_fold(String::new(), |mut acc, para| -> miette::Result<_> {
                     paragraph::render_paragraph(&para, &mut acc, hbr)
-                        .into_diagnostic()
                         .wrap_err("Couldn't render link description")?;
                     Ok(acc)
                 })
@@ -77,7 +76,6 @@ fn render_target(
             .iter()
             .map(|segment| {
                 paragraph::render_paragraph(&segment, dest, hbr)
-                    .into_diagnostic()
                     .wrap_err("Couldn't render heading link")
             })
             .collect::<miette::Result<()>>()

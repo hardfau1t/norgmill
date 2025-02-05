@@ -2,7 +2,7 @@
 use crate::renderer::paragraph;
 use handlebars::Handlebars;
 use serde::Serialize;
-use tracing::{debug, instrument, trace, warn};
+use tracing::{debug, warn};
 
 #[derive(Serialize)]
 struct Heading {
@@ -18,17 +18,18 @@ pub fn render_heading(
     content: String,
     write_to: &mut String,
     hbr: &Handlebars,
-) -> std::fmt::Result {
+) -> miette::Result<()> {
     if !extensions.is_empty() {
         warn!("not rendering extensions: {extensions:?}, its not supported yet");
     }
     debug!("rendering heading: title {title:?}, with _content: {content:?}, extensions: {extensions:?}");
-    let title_text = title
-        .iter()
-        .try_fold(String::new(), |mut acc, segment| {
+    let title_text = title.iter().try_fold(
+        String::new(),
+        |mut acc, segment| -> miette::Result<String> {
             paragraph::render_paragraph(segment, &mut acc, hbr)?;
             Ok(acc)
-        })?;
+        },
+    )?;
     let heading = Heading {
         title: title_text,
         level,

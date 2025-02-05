@@ -91,7 +91,6 @@ fn render_ast(
             p.iter()
                 .map(|segment| paragraph::render_paragraph(segment, &mut para, hbr))
                 .collect::<Result<(), _>>()
-                .into_diagnostic()
                 .wrap_err("Failed to construct paragraph")?;
             let para = Para { para };
             let rendered_para = hbr
@@ -160,7 +159,6 @@ fn render_ast(
                 &mut rendered_string,
                 hbr,
             )
-            .into_diagnostic()
             .wrap_err("Failed to construct paragraph")?;
         }
         //norg::NorgAST::CarryoverTag { tag_type, name, parameters, next_object } => todo!(),
@@ -189,7 +187,6 @@ fn render_flat_ast(ast: &norg::NorgASTFlat, hbr: &Handlebars) -> miette::Result<
                 String::new(),
                 |mut acc, para| -> miette::Result<String> {
                     paragraph::render_paragraph(para, &mut acc, &hbr)
-                        .into_diagnostic()
                         .wrap_err("Couldn't render list item")?;
                     miette::Result::Ok(acc)
                 },
