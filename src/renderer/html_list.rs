@@ -2,7 +2,7 @@
 use handlebars::Handlebars;
 use miette::{Context, IntoDiagnostic};
 use serde::Serialize;
-use tracing::{error, debug, instrument, trace, warn};
+use tracing::{debug, error, instrument, trace, warn};
 
 use super::paragraph;
 
@@ -66,7 +66,7 @@ impl HtmlList {
     }
 
     /// append an item html list item
-    #[instrument(skip(hbr, nested_content))]
+    #[instrument(skip(hbr, nested_content, extensions))]
     pub fn push(
         &mut self,
         text: Box<norg::NorgASTFlat>,
@@ -79,18 +79,17 @@ impl HtmlList {
         }
         trace!("Adding row to html list");
         let list_item = super::render_flat_ast(&text, hbr)?;
-        let list_item = nested_content.into_iter().try_fold(
+        let mut inner_context = super::NorgContext::default();
+        let mut list_item = nested_content.into_iter().try_fold(
             list_item,
             |mut acc, ast| -> miette::Result<String> {
-                let mut inner_context = super::NorgContext::default();
                 let part = super::render_ast(ast, &mut inner_context, hbr)?;
                 acc.push_str(&part);
-                inner_context.flush(&mut acc, hbr)?;
                 miette::Result::Ok(acc)
             },
         )?;
+        inner_context.flush(&mut list_item, hbr)?;
         self.items.push(list_item);
         Ok(())
     }
 }
-
