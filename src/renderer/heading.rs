@@ -24,7 +24,7 @@ pub fn render_heading(
     }
     debug!("rendering heading: title {title:?}, with _content: {content:?}, extensions: {extensions:?}");
     let title_text = title
-        .into_iter()
+        .iter()
         .try_fold(String::new(), |mut acc, segment| {
             paragraph::render_paragraph(segment, &mut acc, hbr)?;
             Ok(acc)

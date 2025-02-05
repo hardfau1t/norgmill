@@ -13,9 +13,9 @@ struct Link {
 
 impl Link {
     fn new(
-        file_path: Option<String>,
-        targets: Vec<norg::LinkTarget>,
-        description: Option<Vec<norg::ParagraphSegment>>,
+        file_path: Option<&str>,
+        targets: &[norg::LinkTarget],
+        description: Option<&[norg::ParagraphSegment]>,
         hbr: &handlebars::Handlebars,
     ) -> miette::Result<Self> {
         let mut rendered_target = String::new();
@@ -25,7 +25,7 @@ impl Link {
             description
                 .into_iter()
                 .try_fold(String::new(), |mut acc, para| -> miette::Result<_> {
-                    paragraph::render_paragraph(para, &mut acc, hbr)
+                    paragraph::render_paragraph(&para, &mut acc, hbr)
                         .into_diagnostic()
                         .wrap_err("Couldn't render link description")?;
                     Ok(acc)
@@ -34,7 +34,7 @@ impl Link {
             Ok(rendered_target.clone())
         }?;
         if let Some(norgfile_path) = file_path {
-            let mut target_link = parse_norg_path(norgfile_path);
+            let mut target_link = parse_norg_path(norgfile_path.to_string());
             // if there is only link to file then target will be empty
             if !rendered_target.is_empty() {
                 target_link.push('#');
@@ -56,9 +56,9 @@ impl Link {
 
 #[instrument(skip(hbr))]
 pub fn render_link<'a>(
-    file_path: Option<String>,
-    targets: Vec<norg::LinkTarget>,
-    description: Option<Vec<norg::ParagraphSegment>>,
+    file_path: Option<&str>,
+    targets: &[norg::LinkTarget],
+    description: Option<&[norg::ParagraphSegment]>,
     hbr: &handlebars::Handlebars,
 ) -> miette::Result<String> {
     let link = Link::new(file_path, targets, description, hbr)?;
@@ -68,15 +68,15 @@ pub fn render_link<'a>(
 }
 
 fn render_target(
-    targets: Vec<norg::LinkTarget>,
+    targets: &[norg::LinkTarget],
     write_to: &mut String,
     hbr: &handlebars::Handlebars,
 ) -> miette::Result<()> {
-    let render_paras = |title: Vec<norg::ParagraphSegment>, dest: &mut String| {
+    let render_paras = |title: &[norg::ParagraphSegment], dest: &mut String| {
         title
-            .into_iter()
+            .iter()
             .map(|segment| {
-                paragraph::render_paragraph(segment, dest, hbr)
+                paragraph::render_paragraph(&segment, dest, hbr)
                     .into_diagnostic()
                     .wrap_err("Couldn't render heading link")
             })

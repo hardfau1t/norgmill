@@ -5,7 +5,7 @@ use tracing::{debug, warn};
 use super::{basic, link};
 
 pub fn render_paragraph(
-    para: norg::ParagraphSegment,
+    para: &norg::ParagraphSegment,
     write_to: &mut String,
     hbr: &Handlebars,
 ) -> std::fmt::Result {
@@ -27,7 +27,7 @@ pub fn render_paragraph(
             content,
         } => {
             let mut attached_string = String::new();
-            basic::render_attached(modifier_type, content, &mut attached_string, hbr);
+            basic::render_attached(*modifier_type, content, &mut attached_string, hbr);
             write!(write_to, "{}", attached_string)
         }
         //ParagraphSegment::AttachedModifierOpener(_) => todo!(),
@@ -43,7 +43,7 @@ pub fn render_paragraph(
             targets,
             description,
         } => {
-            let rendered_link = link::render_link(filepath, targets, description, hbr);
+            let rendered_link = link::render_link(filepath.as_deref(), targets, description.as_deref(), hbr);
             write!(write_to, "{}", rendered_link.expect("failed generate link, convert it to error later"))
         }
         _ => {

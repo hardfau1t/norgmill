@@ -64,13 +64,13 @@ struct Comment {
 
 pub fn render_attached(
     modifier: Modifier,
-    content: Vec<norg::ParagraphSegment>,
+    content: &[norg::ParagraphSegment],
     write_to: &mut String,
     hbr: &handlebars::Handlebars,
 ) {
     // render segments first
     let mut segments_collector = String::new();
-    content.into_iter().for_each(|segment| {
+    content.iter().for_each(|segment| {
         paragraph::render_paragraph(segment, &mut segments_collector, hbr)
             .expect("Couldn't render string")
     });

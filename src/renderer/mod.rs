@@ -3,14 +3,18 @@ use std::backtrace::Backtrace;
 use handlebars::Handlebars;
 use miette::{Context, IntoDiagnostic};
 use serde::Serialize;
-use tracing::{debug, instrument, warn};
+use tracing::{debug, warn};
 
 mod basic;
+mod definition;
+mod footnote;
 mod heading;
 mod html_list;
 mod link;
 mod paragraph;
 mod quote;
+mod table;
+mod verbatim;
 
 #[derive(Debug, Default)]
 struct NorgContext {
@@ -84,7 +88,7 @@ fn render_ast(
     match ast {
         norg::NorgAST::Paragraph(p) => {
             let mut para = String::new();
-            p.into_iter()
+            p.iter()
                 .map(|segment| paragraph::render_paragraph(segment, &mut para, hbr))
                 .collect::<Result<(), _>>()
                 .into_diagnostic()
@@ -113,12 +117,25 @@ fn render_ast(
                 .push(text, content, extensions, hbr),
         }?,
 
-        //norg::NorgAST::RangeableDetachedModifier {
-        //    modifier_type,
-        //    title,
-        //    extensions,
-        //    content,
-        //} => todo!(),
+        norg::NorgAST::RangeableDetachedModifier {
+            modifier_type,
+            title,
+            extensions,
+            content,
+        } => {
+            let output_string = match modifier_type {
+                norg::RangeableDetachedModifier::Definition => {
+                    definition::render_definition(title, extensions, content, hbr)?
+                }
+                norg::RangeableDetachedModifier::Footnote => {
+                    footnote::render_footnote(title, extensions, content, hbr)?
+                }
+                norg::RangeableDetachedModifier::Table => {
+                    table::render_table(title, extensions, content, hbr)?
+                }
+            };
+            rendered_string.push_str(&output_string);
+        }
         norg::NorgAST::Heading {
             level,
             title,
@@ -146,15 +163,44 @@ fn render_ast(
             .into_diagnostic()
             .wrap_err("Failed to construct paragraph")?;
         }
-        //norg::NorgASTFlat::CarryoverTag { tag_type, name, parameters, next_object } => todo!(),
-        //norg::NorgASTFlat::VerbatimRangedTag { name, parameters, content } => todo!(),
-        //norg::NorgASTFlat::RangedTag { name, parameters, content } => todo!(),
-        //norg::NorgASTFlat::InfirmTag { name, parameters } => todo!(),
+        //norg::NorgAST::CarryoverTag { tag_type, name, parameters, next_object } => todo!(),
+        norg::NorgAST::VerbatimRangedTag {
+            name,
+            parameters,
+            content,
+        } => {
+            let tag_content = verbatim::render_paragraph(name, parameters, content, hbr)?;
+            rendered_string.push_str(&tag_content);
+        }
+        //norg::NorgAST::RangedTag { name, parameters, content } => todo!(),
+        //norg::NorgAST::InfirmTag { name, parameters } => todo!(),
         _ => {
             warn!("Rendering is not implemented for {ast:?} item");
         }
     };
     Ok(rendered_string)
+}
+
+/// this currently used only in html list and definitions items so some of the items may not work
+fn render_flat_ast(ast: &norg::NorgASTFlat, hbr: &Handlebars) -> miette::Result<String> {
+    match ast {
+        norg::NorgASTFlat::Paragraph(paras) => {
+            let list_item = paras.into_iter().try_fold(
+                String::new(),
+                |mut acc, para| -> miette::Result<String> {
+                    paragraph::render_paragraph(para, &mut acc, &hbr)
+                        .into_diagnostic()
+                        .wrap_err("Couldn't render list item")?;
+                    miette::Result::Ok(acc)
+                },
+            )?;
+            Ok(list_item)
+        }
+        _ => {
+            warn!("Current this item is not supported in list items");
+            miette::bail!("Unsupported item in list text")
+        }
+    }
 }
 
 /// register all the helpers from submodule

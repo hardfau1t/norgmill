@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{title}}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -38,6 +39,28 @@
         .home-button:hover {
             background-color: #0056b3;
         }
+        pre {
+            padding: 15px;
+            border-radius: 5px;
+            background: #282c34;
+            color: white;
+            overflow-x: auto;
+        }
+        .block {
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            border-left: 4px solid;
+        }
+        .definition {
+            background-color: #fff3e0;
+            border-left-color: #ff9800;
+        }
+
+        .block-title {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
     </style>
 </head>
 <body>
@@ -47,4 +70,5 @@
     <p>
         {{{body}}}
     </p>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
 </body></html>

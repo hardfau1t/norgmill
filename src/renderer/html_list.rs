@@ -78,7 +78,7 @@ impl HtmlList {
             warn!("currently detached modifier extensions are not supported");
         }
         trace!("Adding row to html list");
-        let list_item = render_flat_ast(text, hbr)?;
+        let list_item = super::render_flat_ast(&text, hbr)?;
         let list_item = nested_content.into_iter().try_fold(
             list_item,
             |mut acc, ast| -> miette::Result<String> {
@@ -94,24 +94,3 @@ impl HtmlList {
     }
 }
 
-/// this currently used only in html list items so some of the items may not work
-fn render_flat_ast(ast: Box<norg::NorgASTFlat>, hbr: &Handlebars) -> miette::Result<String> {
-    match *ast {
-        norg::NorgASTFlat::Paragraph(paras) => {
-            let list_item = paras.into_iter().try_fold(
-                String::new(),
-                |mut acc, para| -> miette::Result<String> {
-                    paragraph::render_paragraph(para, &mut acc, &hbr)
-                        .into_diagnostic()
-                        .wrap_err("Couldn't render list item")?;
-                    miette::Result::Ok(acc)
-                },
-            )?;
-            Ok(list_item)
-        }
-        _ => {
-            warn!("Current this item is not supported in list items");
-            miette::bail!("Unsupported item in list text")
-        }
-    }
-}
