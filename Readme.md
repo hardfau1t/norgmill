@@ -19,3 +19,8 @@ Templates are currently stored in `./templates` folder and css files are present
 
 > 📝 **Note**: The project is still in alpha state, structure and file organization may change.
 
+
+# Goals
+
+- [ ] GTD workflow, at least a dashboard to view status of projects and tasks, next tasks etc
+- [ ] 100% support for neorg specs
