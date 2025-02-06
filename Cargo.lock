@@ -933,7 +933,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "norganic"
+name = "norgmill"
 version = "0.1.0"
 dependencies = [
  "axum",
