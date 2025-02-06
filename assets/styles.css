@@ -115,6 +115,7 @@ pre {
     line-height: 1.4;
     padding: 0.25rem 0;
     letter-spacing: -0.02em;
+    margin: 0.75rem;
 }
 
 /* Heading levels styling */
@@ -128,7 +129,6 @@ h1.heading {
     text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
     border-bottom: 3px solid #3b82f6;
     padding-bottom: 0.75rem;
-    margin-bottom: 1rem;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
@@ -215,4 +215,7 @@ h1.heading:hover {
 
 h2.heading:hover, h3.heading:hover {
     transform: translateX(5px);
+}
+p {
+    margin: 0.25rem;
 }
