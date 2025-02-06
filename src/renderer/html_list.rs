@@ -4,7 +4,6 @@ use miette::{Context, IntoDiagnostic};
 use serde::Serialize;
 use tracing::{debug, error, instrument, trace, warn};
 
-use super::paragraph;
 
 #[derive(Debug, Serialize)]
 pub struct HtmlList {
@@ -74,13 +73,10 @@ impl HtmlList {
         extensions: Vec<norg::DetachedModifierExtension>,
         hbr: &Handlebars,
     ) -> miette::Result<()> {
-        if !extensions.is_empty() {
-            warn!("currently detached modifier extensions are not supported");
-        }
         trace!("Adding row to html list");
         let list_item = super::render_flat_ast(&text, hbr)?;
         let mut inner_context = super::NorgContext::default();
-        let mut list_item = nested_content.into_iter().try_fold(
+        let list_item = nested_content.into_iter().try_fold(
             list_item,
             |mut acc, ast| -> miette::Result<String> {
                 let part = super::render_ast(ast, &mut inner_context, hbr)?;
@@ -88,8 +84,20 @@ impl HtmlList {
                 miette::Result::Ok(acc)
             },
         )?;
-        inner_context.flush(&mut list_item, hbr)?;
-        self.items.push(list_item);
+        // this needs to be applied first since modifiers which are applied at the end should not be applied to inner lists
+        let mut formatted_list_item = extensions
+            .into_iter()
+            .try_fold(list_item.clone(), |acc, extension| {
+                super::extensions::apply_extension(&extension, &acc, hbr)
+            })
+            .unwrap_or_else(|e| {
+                error!(?e, "Couldn't render the extension");
+                list_item
+            });
+        debug!(formatted_list_item, "list item after applying extensions");
+        // apply all extensions
+        inner_context.flush(&mut formatted_list_item, hbr)?;
+        self.items.push(formatted_list_item);
         Ok(())
     }
 }

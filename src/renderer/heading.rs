@@ -2,7 +2,7 @@
 use crate::renderer::paragraph;
 use handlebars::Handlebars;
 use serde::Serialize;
-use tracing::{debug, warn};
+use tracing::{debug, error};
 
 #[derive(Serialize)]
 struct Heading {
@@ -19,9 +19,6 @@ pub fn render_heading(
     write_to: &mut String,
     hbr: &Handlebars,
 ) -> miette::Result<()> {
-    if !extensions.is_empty() {
-        warn!("not rendering extensions: {extensions:?}, its not supported yet");
-    }
     debug!("rendering heading: title {title:?}, with _content: {content:?}, extensions: {extensions:?}");
     let title_text = title.iter().try_fold(
         String::new(),
@@ -30,8 +27,18 @@ pub fn render_heading(
             Ok(acc)
         },
     )?;
+    // this needs to be applied first since modifiers which are applied at the end should not be applied to inner lists
+    let title_text_with_ext = extensions
+        .into_iter()
+        .try_fold(title_text.clone(), |acc, extension| {
+            super::extensions::apply_extension(&extension, &acc, hbr)
+        })
+        .unwrap_or_else(|e| {
+            error!(?e, "Couldn't render the extension");
+            title_text
+        });
     let heading = Heading {
-        title: title_text,
+        title: title_text_with_ext,
         level,
         content,
     };

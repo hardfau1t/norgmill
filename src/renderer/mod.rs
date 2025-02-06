@@ -15,6 +15,7 @@ mod paragraph;
 mod quote;
 mod table;
 mod verbatim;
+mod extensions;
 
 #[derive(Debug, Default)]
 struct NorgContext {
