@@ -1,5 +1,10 @@
-<div class="content"  style="margin-left: {{heading_indent_level level}}em;">
-<h{{level}}>{{{title}}}</h{{level}}>
-    <p>{{{content}}}</p>
+<div class="heading-block">
+    <div class="heading-wrapper level-{{level}}">
+        <h{{level}} class="heading">{{{title}}}</h{{level}}>
+    </div>
+    {{#if content}}
+        <div class="content-wrapper">
+            <p class="content">{{{content}}}</p>
+        </div>
+    {{/if}}
 </div>
-
