@@ -65,7 +65,7 @@ impl HtmlList {
     }
 
     /// append an item html list item
-    #[instrument(skip(hbr, nested_content, extensions))]
+    #[instrument(skip(self, hbr, nested_content, extensions))]
     pub fn push(
         &mut self,
         text: Box<norg::NorgASTFlat>,

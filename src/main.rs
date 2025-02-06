@@ -112,19 +112,18 @@ struct CmdlineArgs {
     command: Functionality,
 }
 
-
 #[instrument(skip(dev_mode))]
-async fn serve(
-    root_dir: std::path::PathBuf,
-    dev_mode: bool,
-) -> Result<(), Box<dyn std::error::Error>> {
+async fn serve(root_dir: std::path::PathBuf, dev_mode: bool) -> miette::Result<()> {
     info!("starting server");
 
     let mut handlebars_registry = handlebars::Handlebars::new();
     handlebars_registry.set_dev_mode(dev_mode);
 
     let load_options = handlebars::DirectorySourceOptions::default();
-    handlebars_registry.register_templates_directory("./templates", load_options)?;
+    handlebars_registry
+        .register_templates_directory("./templates", load_options)
+        .into_diagnostic()
+        .wrap_err("Couldn't load templates")?;
 
     renderer::registser_helpers(&mut handlebars_registry);
 
@@ -142,10 +141,7 @@ async fn serve(
             routing::get(|| async { Redirect::to("/workspace/index.norg") }),
         )
         .route("/workspace/*file_path", routing::get(index))
-        .nest_service(
-            "/static",
-            tower_http::services::ServeDir::new("assets"),
-        )
+        .nest_service("/static", tower_http::services::ServeDir::new("assets"))
         .nest_service(
             &format!("/{}", constants::SYSTEM_PATH),
             tower_http::services::ServeDir::new("/"),
@@ -156,16 +152,31 @@ async fn serve(
             hbr: handlebars_registry,
         }));
 
-    let listener = TcpListener::bind("0.0.0.0:8080").await?;
-    info!("Listening on {:?}", listener.local_addr()?);
-    axum::serve(listener, app.into_make_service()).await?;
+    let listener = TcpListener::bind("0.0.0.0:8080")
+        .await
+        .into_diagnostic()
+        .wrap_err("Unable to start a tcp listener")?;
+    info!(
+        "Listening on {:?}",
+        listener
+            .local_addr()
+            .into_diagnostic()
+            .wrap_err("Couldn't get the local address")?
+    );
+    axum::serve(listener, app.into_make_service())
+        .await
+        .into_diagnostic()
+        .wrap_err("Failed to start axum server")?;
     Ok(())
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> miette::Result<()> {
     let args = CmdlineArgs::parse();
-    dotenv()?;
+    #[cfg(debug_assertions)]
+    dotenv()
+        .into_diagnostic()
+        .wrap_err("Couldn't load .env file")?;
     #[cfg(debug_assertions)]
     let fmt_event = tracing_subscriber::fmt::format().pretty();
     #[cfg(not(debug_assertions))]
@@ -202,7 +213,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     debug!("log level set to {log_level}");
     match args.command {
-        Functionality::Serve { dev_mode, root_dir } => serve(root_dir, dev_mode).await?,
+        Functionality::Serve { dev_mode, root_dir } => serve(root_dir, dev_mode)
+            .await
+            .wrap_err("Couldn't run the http server")?,
         Functionality::DumpAst { path } => renderer::dump_ast(path).await?,
     };
     Ok(())
