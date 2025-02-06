@@ -200,9 +200,9 @@ async fn main() -> miette::Result<()> {
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| {
                 if cfg!(debug_assertions) {
-                    "norg_viewer=trace,rust_norg=trace,tower_http=trace,axum::rejection=trace"
+                    "norgmill=trace,rust_norg=trace,tower_http=trace,axum::rejection=trace"
                 } else {
-                    "norg_viewer=debug,rust_norg=info,tower_http=debug,axum::rejection=info"
+                    "norgmill=debug,rust_norg=info,tower_http=debug,axum::rejection=info"
                 }
                 .into()
             }),
