@@ -66,7 +66,6 @@ async fn render_norg_file<'a>(
     Ok(Html(page))
 }
 
-
 async fn system_files(
     State(state): State<Arc<AppState>>,
     Path(system_path): Path<std::path::PathBuf>,
@@ -113,18 +112,22 @@ struct CmdlineArgs {
     command: Functionality,
 }
 
+
+#[instrument(skip(dev_mode))]
 async fn serve(
     root_dir: std::path::PathBuf,
     dev_mode: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    debug!("serving content of {root_dir:?}");
+    info!("starting server");
+
     let mut handlebars_registry = handlebars::Handlebars::new();
     handlebars_registry.set_dev_mode(dev_mode);
+
     let load_options = handlebars::DirectorySourceOptions::default();
     handlebars_registry.register_templates_directory("./templates", load_options)?;
+
     renderer::registser_helpers(&mut handlebars_registry);
-    // TODO: change these workspace to constant
-    // probably create another router for accessing workspace
+
     let app = Router::new()
         .route(
             "/",
@@ -139,9 +142,13 @@ async fn serve(
             routing::get(|| async { Redirect::to("/workspace/index.norg") }),
         )
         .route("/workspace/*file_path", routing::get(index))
-        .route(
-            &format!("/{}/*file_path", constants::SYSTEM_PATH),
-            routing::get(system_files),
+        .nest_service(
+            "/static",
+            tower_http::services::ServeDir::new("assets"),
+        )
+        .nest_service(
+            &format!("/{}", constants::SYSTEM_PATH),
+            tower_http::services::ServeDir::new("/"),
         )
         .layer(tower_http::trace::TraceLayer::new_for_http())
         .with_state(std::sync::Arc::new(AppState {
