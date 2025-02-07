@@ -42,7 +42,7 @@ async fn render_norg_file<'a>(
             http::StatusCode::NOT_FOUND
         })?;
     let body = renderer::parse_and_render_body(&content, hbr).map_err(|e| {
-        error!("failed to read {e}");
+        error!("failed to render body: {e}");
         http::StatusCode::INTERNAL_SERVER_ERROR
     })?;
 
@@ -173,7 +173,7 @@ async fn serve(root_dir: std::path::PathBuf, dev_mode: bool) -> miette::Result<(
 #[tokio::main]
 async fn main() -> miette::Result<()> {
     let args = CmdlineArgs::parse();
-    #[cfg(debug_assertions)]
+    //#[cfg(debug_assertions)]
     dotenv()
         .into_diagnostic()
         .wrap_err("Couldn't load .env file")?;
