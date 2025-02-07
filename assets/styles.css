@@ -219,3 +219,69 @@ h2.heading:hover, h3.heading:hover {
 p {
     margin: 0.25rem;
 }
+/* Quotes */
+.quote-block {
+    margin: 1.5rem 0;
+    position: relative;
+}
+
+.quote-content {
+    margin: 0;
+    padding: 1rem 1.5rem;
+    border-radius: 0.5rem;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.6;
+}
+
+/* Level 1 - Primary quote */
+.level-1 .quote-content {
+    background: linear-gradient(to right, #eef2ff, #e0e7ff);
+    border-left: 5px solid #4f46e5;
+    color: #1e1b4b;
+    font-size: 1.1rem;
+    box-shadow: 0 2px 4px rgba(79, 70, 229, 0.1);
+}
+
+/* Level 2 - Secondary quote */
+.level-2 .quote-content {
+    background: linear-gradient(to right, #eff6ff, #dbeafe);
+    border-left: 4px solid #3b82f6;
+    color: #1e3a8a;
+    font-size: 1.05rem;
+}
+
+/* Level 3 - Tertiary quote */
+.level-3 .quote-content {
+    background: linear-gradient(to right, #f0f9ff, #bae6fd);
+    border-left: 4px solid #0ea5e9;
+    color: #075985;
+    font-size: 1rem;
+}
+
+/* Level 4 - Quaternary quote */
+.level-4 .quote-content {
+    background: linear-gradient(to right, #ecfeff, #a5f3fc);
+    border-left: 3px solid #06b6d4;
+    color: #164e63;
+    font-size: 0.95rem;
+}
+
+/* Level 5 - Quinary quote */
+.level-5 .quote-content {
+    background: linear-gradient(to right, #f0fdfa, #99f6e4);
+    border-left: 3px solid #14b8a6;
+    color: #134e4a;
+    font-size: 0.95rem;
+}
+
+/* Level 6 and beyond - Senary quote */
+.level-6 .quote-content {
+    background: linear-gradient(to right, #f0fdf4, #86efac);
+    border-left: 2px solid #22c55e;
+    color: #14532d;
+    font-size: 0.95rem;
+}
+
+.nested-quotes {
+    margin-top: 1rem;
+}

@@ -1,0 +1,12 @@
+<div class="quote-block level-{{level}}" style="margin-left: {{level}}em;">
+    <blockquote class="quote-content">
+        {{{content}}}
+        {{#if children}}
+            <div class="nested-quotes">
+                {{#each children}}
+                    {{{this}}}
+                {{/each}}
+            </div>
+        {{/if}}
+    </blockquote>
+</div>

@@ -7,6 +7,7 @@ use tracing::{debug, warn};
 
 mod basic;
 mod definition;
+mod extensions;
 mod footnote;
 mod heading;
 mod html_list;
@@ -15,7 +16,6 @@ mod paragraph;
 mod quote;
 mod table;
 mod verbatim;
-mod extensions;
 
 #[derive(Debug, Default)]
 struct NorgContext {
@@ -75,7 +75,7 @@ fn render_ast(
     context: &mut NorgContext,
     hbr: &Handlebars,
 ) -> miette::Result<String> {
-    let mut rendered_string = String::new();
+    let mut rendered_html = String::new();
 
     // first check if there are any liste items from the previous step are present
     if let Some(html_list) = context
@@ -83,7 +83,7 @@ fn render_ast(
         .take_if(|list| !list.expected(&ast))
     {
         // there exists a html list but current item is not part of that list so render that item
-        html_list.render(&mut rendered_string, hbr)?
+        html_list.render(&mut rendered_html, hbr)?
     };
 
     match ast {
@@ -98,7 +98,7 @@ fn render_ast(
                 .render("paragraph", &para)
                 .into_diagnostic()
                 .wrap_err("Failed to render paragraph")?;
-            rendered_string.push_str(&rendered_para);
+            rendered_html.push_str(&rendered_para);
         }
         norg::NorgAST::NestableDetachedModifier {
             modifier_type,
@@ -108,7 +108,9 @@ fn render_ast(
             content,
         } => match modifier_type {
             norg::NestableDetachedModifier::Quote => {
-                quote::render_quote(level, extensions, text, content, &mut rendered_string, hbr)
+                let rendered_quote = quote::render_quote(level, extensions, text, content, hbr)?;
+                rendered_html.push_str(&rendered_quote);
+                Ok(())
             }
             // no need to check if the item is of different type, if it is then it will be flushed at the beginning of the loop
             _ => context
@@ -134,7 +136,7 @@ fn render_ast(
                     table::render_table(title, extensions, content, hbr)?
                 }
             };
-            rendered_string.push_str(&output_string);
+            rendered_html.push_str(&output_string);
         }
         norg::NorgAST::Heading {
             level,
@@ -157,7 +159,7 @@ fn render_ast(
                 title,
                 extensions,
                 heading_content,
-                &mut rendered_string,
+                &mut rendered_html,
                 hbr,
             )
             .wrap_err("Failed to construct paragraph")?;
@@ -169,7 +171,7 @@ fn render_ast(
             content,
         } => {
             let tag_content = verbatim::render_paragraph(name, parameters, content, hbr)?;
-            rendered_string.push_str(&tag_content);
+            rendered_html.push_str(&tag_content);
         }
         //norg::NorgAST::RangedTag { name, parameters, content } => todo!(),
         //norg::NorgAST::InfirmTag { name, parameters } => todo!(),
@@ -177,7 +179,7 @@ fn render_ast(
             warn!("Rendering is not implemented for {ast:?} item");
         }
     };
-    Ok(rendered_string)
+    Ok(rendered_html)
 }
 
 /// this currently used only in html list and definitions items so some of the items may not work
