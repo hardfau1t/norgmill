@@ -7,13 +7,13 @@ use tracing::{debug, instrument, trace, warn};
 
 #[derive(Debug, Serialize)]
 struct DocumentMeta<'a> {
-    title: &'a str,
-    description: &'a str,
-    authors: &'a str,
-    categories: &'a str,
-    created: &'a str,
-    updated: &'a str,
-    version: &'a str,
+    title: Option<&'a str>,
+    description: Option<&'a str>,
+    authors: Option<&'a str>,
+    categories: Option<&'a str>,
+    created: Option<&'a str>,
+    updated: Option<&'a str>,
+    version: Option<&'a str>,
 }
 
 impl<'a> DocumentMeta<'a> {
@@ -65,27 +65,13 @@ impl<'a> DocumentMeta<'a> {
             }
         }
         Ok(Self {
-            title: title.ok_or(miette::miette!(
-                "Couldn't find the title in the document meta"
-            ))?,
-            description: description.ok_or(miette::miette!(
-                "Couldn't find the description in the document meta"
-            ))?,
-            authors: authors.ok_or(miette::miette!(
-                "Couldn't find the authors in the document meta"
-            ))?,
-            categories: categories.ok_or(miette::miette!(
-                "Couldn't find the categories in the document meta"
-            ))?,
-            created: created.ok_or(miette::miette!(
-                "Couldn't find the created in the document meta"
-            ))?,
-            updated: updated.ok_or(miette::miette!(
-                "Couldn't find the updated in the document meta"
-            ))?,
-            version: version.ok_or(miette::miette!(
-                "Couldn't find the version in the document meta"
-            ))?,
+            title,
+            description,
+            authors,
+            categories,
+            created,
+            updated,
+            version,
         })
     }
 }
@@ -119,3 +105,4 @@ pub fn render_document(
         }
     }
 }
+
