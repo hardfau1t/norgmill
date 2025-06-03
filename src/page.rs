@@ -1,0 +1,4 @@
+struct Page {
+    title: String,
+
+}

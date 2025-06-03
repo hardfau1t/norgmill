@@ -14,6 +14,7 @@ use tracing::{debug, error, info, instrument, level_filters::LevelFilter, trace}
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 mod constants;
 mod renderer;
+mod page;
 
 #[derive(Debug, Clone)]
 struct AppState {

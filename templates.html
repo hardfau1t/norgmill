@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Norg HTML Templates</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+        }
+        code {
+            background-color: #f5f5f5;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .template {
+            margin-bottom: 30px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+        }
+        .template-name {
+            font-weight: bold;
+            color: #3498db;
+        }
+        .template-code {
+            background-color: #f8f8f8;
+            padding: 10px;
+            border-radius: 4px;
+            border-left: 3px solid #3498db;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Norg HTML Templates</h1>
+    <p>This document contains HTML templates for all possible text representations in the Norg format as described in the specification.</p>
+
+    <!-- Base template -->
+    <div class="template">
+        <h2 class="template-name">Base (Document) Template</h2>
+        <pre class="template-code">
+&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+    &lt;title&gt;{{title}}&lt;/title&gt;
+    &lt;link rel="stylesheet" href="/assets/styles.css"&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;div class="norg-content"&gt;
+        {{{body}}}
+    &lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+        </pre>
+    </div>
+
+    <!-- Document Metadata -->
+    <div class="template">
+        <h2 class="template-name">Document Metadata</h2>
+        <pre class="template-code">
+&lt;div class="document-meta"&gt;
+    {{#if title}}&lt;h1 class="document-title"&gt;{{title}}&lt;/h1&gt;{{/if}}
+    {{#if author}}&lt;div class="document-author"&gt;By: {{author}}&lt;/div&gt;{{/if}}
+    {{#if date}}&lt;div class="document-date"&gt;{{date}}&lt;/div&gt;{{/if}}
+    {{#if description}}&lt;div class="document-description"&gt;{{description}}&lt;/div&gt;{{/if}}
+&lt;/div&gt;
+        </pre>
+    </div>
+
+    <!-- ATTACHED MODIFIERS (inline formatting) -->
+    <h2>Attached Modifiers (Inline Formatting)</h2>
+
+    <div class="template">
+        <h3 class="template-name">Bold</h3>
+        <pre class="template-code">&lt;strong&gt;{{{text}}}&lt;/strong&gt;</pre>
+    </div>
+
+    <div class="template">
+        <h3 class="template-name">Italic</h3>
+        <pre class="template-code">&lt;em&gt;{{{text}}}&lt;/em&gt;</pre>
+    </div>
+
+    <div class="template">
+        <h3 class="template-name">Underline</h3>
+        <pre class="template-code">&lt;u&gt;{{{text}}}&lt;/u&gt;</pre>
+    </div>
+
+    <div class="template">
+        <h3 class="template-name">Strike-through</h3>
+        <pre class="template-code">&lt;s&gt;{{{text}}}&lt;/s&gt;</pre>
+    </div>
+
+    <div class="template">
+        <h3 class="template-name">Spoiler</h3>
+        <pre class="template-code">
+&lt;span class="spoiler" onclick="this.classList.toggle('revealed')"&gt;{{{text}}}&lt;/span&gt;
+        </pre>
+    </div>
+
+    <div class="template">
+        <h3 class="template-name">Superscript</h3>
+        <pre class="template-code">&lt;sup&gt;{{{text}}}&lt;/sup&gt;</pre>
+    </div>
+
+    <div class="template">
+        <h3 class="template-name">Subscript</h3>
+        <pre class="template-code">&lt;sub&gt;{{{text}}}&lt;/sub&gt;</pre>
+    </div>
+
+    <div class="template">
+        <h3 class="template-name">Inline Code</h3>
+        <pre class="template-code">&lt;code&gt;{{{text}}}&lt;/code&gt;</pre>
+    </div>
+
+    <div class="template">
+        <h3 class="template-name">Inline Math</h3>
+        <pre class="template-code">&lt;span class="math"&gt;\({{{text}}}\)&lt;/span&gt;</pre>
+    </div>
+
+    <div class="template">
+        <h3 class="template-name">Variable</h3>
+        <pre class="template-code">&lt;var&gt;{{{text}}}&lt;/var&gt;</pre>
+    </div>
+
+    <div class="template">
+        <h3 class="template-name">Null Modifier (Comment)</h3>
+        <pre class="template-code">&lt;!-- {{{text}}} --&gt;</pre>
+    </div>
+
+    <!-- DETACHED MODIFIERS -->
+    <h2>Detached Modifiers</h2>
+
+    <!-- Structural Modifiers -->
+    <h3>Structural Detached Modifiers</h3>
+
+    <div class="template">
+        <h3 class="template-name">Heading</h3>
+        <pre class="template-code">
+&lt;div class="heading-block level-{{level}}"&gt;
+    &lt;h{{level}} id="heading-{{id}}"&gt;{{{title}}}&lt;/h{{level}}&gt;
+    {{#if content}}
+    &lt;div class="heading-content"&gt;
+        {{{content}}}
+    &lt;/div&gt;
+    {{/if}}
+&lt;/div&gt;
+        </pre>
+    </div>
+
+    <!-- Nestable Detached Modifiers -->
+    <h3>Nestable Detached Modifiers</h3>
+
+    <div class="template">
+        <h3 class="template-name">Unordered List</h3>
+        <pre class="template-code">
+&lt;ul class="norg-unordered-list level-{{level}}"&gt;
+    {{#each items}}
+    &lt;li&gt;
+        &lt;div class="list-item-content"&gt;{{{content}}}&lt;/div&gt;
+        {{#if nested}}
+        {{{nested}}}
+        {{/if}}
+    &lt;/li&gt;
+    {{/each}}
+&lt;/ul&gt;
+        </pre>
+    </div>
+
+    <div class="template">
+        <h3 class="template-name">Ordered List</h3>
+        <pre class="template-code">
+&lt;ol class="norg-ordered-list level-{{level}}"&gt;
+    {{#each items}}
+    &lt;li&gt;
+        &lt;div class="list-item-content"&gt;{{{content}}}&lt;/div&gt;
+        {{#if nested}}
+        {{{nested}}}
+        {{/if}}
+    &lt;/li&gt;
+    {{/each}}
+&lt;/ol&gt;
+        </pre>
+    </div>
+
+    <div class="template">
+        <h3 class="template-name">Quote</h3>
+        <pre class="template-code">
+&lt;div class="quote-block level-{{level}}"&gt;
+    &lt;blockquote&gt;
+        &lt;div class="quote-content"&gt;{{{content}}}&lt;/div&gt;
+        {{#if nested}}
+        &lt;div class="nested-quotes"&gt;
+            {{{nested}}}
+        &lt;/div&gt;
+        {{/if}}
+    &lt;/blockquote&gt;
+&lt;/div&gt;
+        </pre>
+    </div>
+
+    <!-- Range-able Detached Modifiers -->
+    <h3>Range-able Detached Modifiers</h3>
+
+    <div class="template">
+        <h3 class="template-name">Definition</h3>
+        <pre class="template-code">
+&lt;dl class="norg-definition"&gt;
+    &lt;dt&gt;{{{term}}}&lt;/dt&gt;
+    &lt;dd&gt;{{{definition}}}&lt;/dd&gt;
+&lt;/dl&gt;
+        </pre>
+    </div>
+
+    <div class="template">
+        <h3 class="template-name">Footnote</h3>
+        <pre class="template-code">
+&lt;div class="footnote" id="footnote-{{id}}"&gt;
+    &lt;div class="footnote-label"&gt;{{{title}}}&lt;/div&gt;
+    &lt;div class="footnote-content"&gt;{{{content}}}&lt;/div&gt;
+&lt;/div&gt;
+        </pre>
+    </div>
+
+    <div class="template">
+        <h3 class="template-name">Footnote Reference</h3>
+        <pre class="template-code">
+&lt;a href="#footnote-{{id}}" class="footnote-ref"&gt;&lt;sup&gt;{{{label}}}&lt;/sup&gt;&lt;/a&gt;
+        </pre>
+    </div>
+
+    <div class="template">
+        <h3 class="template-name">Table</h3>
+        <pre class="template-code">
+&lt;table class="norg-table"&gt;
+    {{#if caption}}
+    &lt;caption&gt;{{{caption}}}&lt;/caption&gt;
+    {{/if}}
+    &lt;tbody&gt;
+        {{#each rows}}
+        &lt;tr&gt;
+            {{#each this}}
+            &lt;td&gt;{{{this}}}&lt;/td&gt;
+            {{/each}}
+        &lt;/tr&gt;
+        {{/each}}
+    &lt;/tbody&gt;
+&lt;/table&gt;
+        </pre>
+    </div>
+
+    <!-- Detached Modifier Extensions -->
+    <h3>Detached Modifier Extensions</h3>
+
+    <div class="template">
+        <h3 class="template-name">TODO Status</h3>
+        <pre class="template-code">
+&lt;div class="todo-item todo-{{status}}"&gt;
+    &lt;span class="todo-checkbox {{status}}"&gt;&lt;/span&gt;
+    {{{content}}}
+&lt;/div&gt;
+        </pre>
+    </div>
+
+    <div class="template">
+        <h3 class="template-name">Priority Extension</h3>
+        <pre class="template-code">
+&lt;div class="priority priority-{{level}}"&gt;
+    &lt;span class="priority-marker"&gt;[{{level}}]&lt;/span&gt;
+    {{{content}}}
+&lt;/div&gt;
+        </pre>
+    </div>
+
+    <div class="template">
+        <h3 class="template-name">Timestamp Extension</h3>
+        <pre class="template-code">
+&lt;time datetime="{{datetime_attr}}" class="timestamp"&gt;{{datetime_display}}&lt;/time&gt;
+        </pre>
+    </div>
+
+    <!-- Delimiting Modifiers -->
+    <h3>Delimiting Modifiers</h3>
+
+    <div class="template">
+        <h3 class="template-name">Weak Delimiting Modifier</h3>
+        <pre class="template-code">
+&lt;!-- This is purely structural and doesn't need a template --&gt;
+        </pre>
+    </div>
+
+    <div class="template">
+        <h3 class="template-name">Strong Delimiting Modifier</h3>
+        <pre class="template-code">
+&lt;!-- This is purely structural and doesn't need a template --&gt;
+        </pre>
+    </div>
+
+    <div class="template">
+        <h3 class="template-name">Horizontal Rule</h3>
+        <pre class="template-code">
+&lt;hr class="norg-horizontal-rule"&gt;
+        </pre>
+    </div>
+
+    <!-- TAGS -->
+    <h2>Tags</h2>
+
+    <div class="template">
+        <h3 class="template-name">Standard Ranged Tags (Example)</h3>
+        <pre class="template-code">
+&lt;div class="example-block"&gt;
+    &lt;pre class="example-content"&gt;{{{content}}}&lt;/pre&gt;
+&lt;/div&gt;
+        </pre>
+    </div>
+
+    <div class="template">
+        <h3 class="template-name">Comment Tag</h3>
+        <pre class="template-code">
+&lt;!-- {{{content}}} --&gt;
+        </pre>
+    </div>
+
+    <div class="template">
+        <h3 class="template-name">Details Tag</h3>
+        <pre class="template-code">
+&lt;details class="norg-details"&gt;
+    &lt;summary&gt;{{summary}}&lt;/summary&gt;
+    &lt;div class="details-content"&gt;
+        {{{content}}}
+    &lt;/div&gt;
+&lt;/details&gt;
+        </pre>
+    </div>
+
+    <div class="template">
+        <h3 class="template-name">Group Tag</h3>
+        <pre class="template-code">
+&lt;div class="norg-group {{class}}"&gt;
+    {{{content}}}
+&lt;/div&gt;
+        </pre>
+    </div>
+
+    <div class="template">
+        <h3 class="template-name">Verbatim Ranged Tag (Code Block)</h3>
+        <pre class="template-code">
+&lt;pre class="norg-code-block"&gt;&lt;code{{#if language}} class="language-{{language}}"{{/if}}&gt;{{{content}}}&lt;/code&gt;&lt;/pre&gt;
+        </pre>
+    </div>
+
+    <!-- LINKABLES -->
+    <h2>Linkables</h2>
+
+    <div class="template">
+        <h3 class="template-name">Link Location</h3>
+        <pre class="template-code">
+&lt;a href="{{url}}" class="norg-link{{#if class}} {{class}}{{/if}}"&gt;{{{text}}}&lt;/a&gt;
+        </pre>
+    </div>
+
+    <div class="template">
+        <h3 class="template-name">File Link</h3>
+        <pre class="template-code">
+&lt;a href="{{path}}" class="norg-file-link"&gt;{{{text}}}&lt;/a&gt;
+        </pre>
+    </div>
+
+    <div class="template">
+        <h3 class="template-name">URL Link</h3>
+        <pre class="template-code">
+&lt;a href="{{url}}" class="norg-external-link" target="_blank" rel="noopener noreferrer"&gt;{{{text}}}&lt;/a&gt;
+        </pre>
+    </div>
+
+    <div class="template">
+        <h3 class="template-name">Heading Link</h3>
+        <pre class="template-code">
+&lt;a href="#heading-{{id}}" class="norg-heading-link"&gt;{{{text}}}&lt;/a&gt;
+        </pre>
+    </div>
+
+    <div class="template">
+        <h3 class="template-name">Magic Link</h3>
+        <pre class="template-code">
+&lt;a href="{{url}}" class="norg-magic-link"&gt;{{{text}}}&lt;/a&gt;
+        </pre>
+    </div>
+
+    <div class="template">
+        <h3 class="template-name">Wiki Link</h3>
+        <pre class="template-code">
+&lt;a href="{{url}}" class="norg-wiki-link"&gt;{{{text}}}&lt;/a&gt;
+        </pre>
+    </div>
+
+    <div class="template">
+        <h3 class="template-name">Timestamp Link</h3>
+        <pre class="template-code">
+&lt;time datetime="{{datetime_attr}}" class="norg-timestamp-link"&gt;{{{text}}}&lt;/time&gt;
+        </pre>
+    </div>
+
+    <div class="template">
+        <h3 class="template-name">Inline Link Target</h3>
+        <pre class="template-code">
+&lt;span id="target-{{id}}" class="norg-link-target"&gt;{{{text}}}&lt;/span&gt;
+        </pre>
+    </div>
+
+    <!-- BASIC STRUCTURE -->
+    <h2>Basic Structure</h2>
+
+    <div class="template">
+        <h3 class="template-name">Paragraph</h3>
+        <pre class="template-code">
+&lt;p class="norg-paragraph"&gt;{{{content}}}&lt;/p&gt;
+        </pre>
+    </div>
+
+    <div class="template">
+        <h3 class="template-name">Paragraph Segment</h3>
+        <pre class="template-code">
+&lt;span class="norg-segment"&gt;{{{content}}}&lt;/span&gt;
+        </pre>
+    </div>
+</body>
+</html>
