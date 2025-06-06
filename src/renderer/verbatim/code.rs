@@ -1,11 +1,5 @@
-use serde::Serialize;
 use tracing::{debug, instrument, warn};
 
-#[derive(Debug, Serialize)]
-struct Code<'a> {
-    language: &'a str,
-    content: &'a str,
-}
 #[instrument(skip(content, dbuilder))]
 pub fn render_code<'n, 'd>(
     _name: &'n [String],

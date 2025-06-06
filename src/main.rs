@@ -9,7 +9,6 @@ use axum::{
 use clap::{Parser, Subcommand};
 use dotenv::dotenv;
 use miette::{miette, Context, IntoDiagnostic};
-use serde::Serialize;
 use tokio::net::TcpListener;
 use tracing::{debug, error, info, instrument, level_filters::LevelFilter, trace};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -22,11 +21,6 @@ struct AppState {
     root_dir: std::path::PathBuf,
 }
 
-#[derive(Debug, Serialize)]
-struct NorgPage {
-    title: String,
-    body: String,
-}
 
 async fn render_norg_file<'a>(
     file_path: std::path::PathBuf,
