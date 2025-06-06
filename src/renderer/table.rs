@@ -1,15 +1,14 @@
-use handlebars::Handlebars;
-use tracing::{debug, instrument, warn, trace};
+use tracing::{debug, instrument, trace, warn};
 
-#[instrument(skip(content, extensions, hbr))]
+#[instrument(skip(content, extensions, tbl_builder))]
 pub fn render_table(
     title: Vec<norg::ParagraphSegment>,
     extensions: Vec<norg::DetachedModifierExtension>,
     content: Vec<norg::NorgASTFlat>,
-    hbr: &Handlebars,
-) -> miette::Result<String> {
+    tbl_builder: &mut html::tables::builders::TableBuilder,
+) -> &mut html::tables::builders::TableBuilder {
     trace!("rendering table");
     warn!("rendering table is not implemented");
     debug!("content of table: {content:?} and extension: {extensions:?}");
-    miette::bail!("Not yet implemented")
+    tbl_builder
 }

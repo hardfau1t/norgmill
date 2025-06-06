@@ -1,51 +1,35 @@
+
 use super::paragraph;
-use handlebars::Handlebars;
-use miette::{Context, IntoDiagnostic};
-use serde::Serialize;
-use tracing::{debug, instrument, trace, warn};
+use tracing::{instrument, trace, warn};
 
-#[derive(Debug, Serialize)]
-struct Definition<'a> {
-    title: &'a str,
-    content: &'a str,
-}
-
-#[instrument(skip(extensions, content, hbr))]
-pub fn render_definition(
+#[instrument(skip(extensions, content, dl_builder))]
+pub fn render_definition<'n, 'd>(
     title: Vec<norg::ParagraphSegment>,
     extensions: Vec<norg::DetachedModifierExtension>,
     content: Vec<norg::NorgASTFlat>,
-    hbr: &Handlebars,
-) -> miette::Result<String> {
-    trace!("rendering footnote");
-    debug!("content of definition: {content:?} and extension: {extensions:?}");
+    dl_builder: &'d mut html::text_content::builders::DescriptionListBuilder,
+) -> &'d mut html::text_content::builders::DescriptionListBuilder {
+    trace!("rendering description list");
     if !extensions.is_empty() {
         warn!(extensions=?extensions, "extensions are not supported for definition" );
     }
 
-    let title_text = title.iter().try_fold(
-        String::new(),
-        |mut acc, segment| -> miette::Result<String> {
-            paragraph::render_paragraph(segment, &mut acc, hbr)
-                .wrap_err("Couldn't render definition title")?;
-            Ok(acc)
-        },
-    )?;
-    let definition_content = content.into_iter().try_fold(
-        String::new(),
-        |mut acc, content_ast| -> miette::Result<String> {
-            let rendered_item = super::render_flat_ast(&content_ast, hbr)?;
-            acc.push_str(&rendered_item);
-            Ok(acc)
-        },
-    )?;
-    let definition = Definition {
-        title: &title_text,
-        content: &definition_content,
-    };
-    let rendered_string = hbr
-        .render("definition", &definition)
-        .into_diagnostic()
-        .wrap_err("Couldn't render definition")?;
-    Ok(rendered_string)
+    dl_builder.description_term(|dt_builder| {
+        title.into_iter().for_each(|tseg| {
+            dt_builder.paragraph(|pb| {
+                paragraph::render_paragraph(&tseg, pb);
+                pb
+            });
+        });
+        dt_builder
+    });
+
+    dl_builder.description_details(|dd_builder| {
+        content.into_iter().for_each(|cont_ast| {
+            dd_builder.division(|dv_builder| super::render_flat_ast(&cont_ast, dv_builder));
+        });
+        dd_builder
+    });
+
+    dl_builder
 }

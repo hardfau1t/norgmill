@@ -1,45 +1,26 @@
-use handlebars::Handlebars;
-use miette::{Context, IntoDiagnostic};
-use serde::Serialize;
-use std::fmt::Write;
-use tracing::{debug, warn};
+use tracing::warn;
 
 use super::{basic, link};
 
-pub fn render_paragraph(
+pub fn render_paragraph<'b>(
     para: &norg::ParagraphSegment,
-    write_to: &mut String,
-    hbr: &Handlebars,
-) -> miette::Result<()> {
-    // TODO: convert this to miette error
+    builder: &'b mut html::text_content::builders::ParagraphBuilder,
+) -> &'b mut html::text_content::builders::ParagraphBuilder {
     match para {
         norg::ParagraphSegment::Token(norg::ParagraphSegmentToken::Text(t)) => {
-            write!(write_to, "{}", t)
-                .into_diagnostic()
-                .wrap_err("couldn't write text segment in para")
+            builder.text(t.clone());
         }
         norg::ParagraphSegment::Token(norg::ParagraphSegmentToken::Whitespace) => {
-            write!(write_to, " ")
-                .into_diagnostic()
-                .wrap_err("couldn't write whitespace segment in para")
+            builder.text(" ");
         }
         norg::ParagraphSegment::Token(norg::ParagraphSegmentToken::Special(chr))
         | norg::ParagraphSegment::Token(norg::ParagraphSegmentToken::Escape(chr)) => {
-            debug!("treating {para:?} as normal, at this point not sure whether norg-parser handles this or this crate, raise a bug if this is an issue");
-            write!(write_to, "{}", chr)
-                .into_diagnostic()
-                .wrap_err("couldn't write escape segment in para")
+            builder.text(chr.to_string());
         }
         norg::ParagraphSegment::AttachedModifier {
             modifier_type,
             content,
-        } => {
-            let mut attached_string = String::new();
-            basic::render_attached(*modifier_type, content, &mut attached_string, hbr);
-            write!(write_to, "{}", attached_string)
-                .into_diagnostic()
-                .wrap_err("couldn't write attached modifier segment in para")
-        }
+        } => basic::render_attached(*modifier_type, content, builder),
         //ParagraphSegment::AttachedModifierOpener(_) => todo!(),
         //ParagraphSegment::AttachedModifierOpenerFail(_) => todo!(),
         //ParagraphSegment::AttachedModifierCloserCandidate(_) => todo!(),
@@ -53,47 +34,42 @@ pub fn render_paragraph(
             targets,
             description,
         } => {
-            let rendered_link =
-                link::render_link(filepath.as_deref(), targets, description.as_deref(), hbr)?;
-            write!(write_to, "{}", rendered_link)
-                .into_diagnostic()
-                .wrap_err("couldn't write link segment in para")
+            link::render_link(
+                filepath.as_deref(),
+                targets,
+                description.as_deref(),
+                builder,
+            );
         }
         norg::ParagraphSegment::InlineVerbatim(tokens) => {
-            let rendered_code = render_inline_code(tokens, hbr)?;
-            write_to.push_str(&rendered_code);
-            Ok(())
+            let mut rendered_code = String::with_capacity(tokens.len());
+            for token in tokens {
+                match token {
+                    norg::ParagraphSegmentToken::Text(text) => rendered_code.push_str(&text),
+                    norg::ParagraphSegmentToken::Whitespace => rendered_code.push(' '),
+                    norg::ParagraphSegmentToken::Special(c) => rendered_code.push(*c),
+                    norg::ParagraphSegmentToken::Escape(c) => rendered_code.push(*c),
+                }
+            }
+            builder.code(|cb| cb.text(rendered_code));
         }
         _ => {
             warn!("rendering para segment {para:?} is not yet implemented");
-            Ok(())
         }
-    }
-}
-
-#[derive(Debug, Serialize)]
-struct InlineCode<'a> {
-    code: &'a str,
-}
-
-fn render_inline_code(
-    tokens: &[norg::ParagraphSegmentToken],
-    hbr: &Handlebars,
-) -> miette::Result<String> {
-    let mut rendered_para = String::new();
-    for token in tokens {
-        render_paragraph(
-            &norg::ParagraphSegment::Token(token.clone()),
-            &mut rendered_para,
-            hbr,
-        )?;
-    }
-    let inline_code = InlineCode {
-        code: &rendered_para,
     };
-    let rendered_code = hbr
-        .render("inline-code", &inline_code)
-        .into_diagnostic()
-        .wrap_err("couldn't render inline code block")?;
-    Ok(rendered_code)
+    builder
+}
+
+/// Sometime All you want is text in given paragraph segments(ex. in link targets or description)
+pub fn render_paragraph_to_string(segments: &[norg::ParagraphSegment]) -> String {
+    let mut para_builder = html::text_content::Paragraph::builder();
+    for segment in segments {
+        render_paragraph(segment, &mut para_builder);
+    }
+    para_builder
+        .build()
+        .children()
+        .iter()
+        .map(|c| c.to_string())
+        .collect::<String>()
 }

@@ -1,87 +1,44 @@
 //! module which does rendering of headings
 use crate::renderer::paragraph;
-use handlebars::Handlebars;
-use serde::Serialize;
-use tracing::{debug, error};
+use tracing::{debug, instrument, trace};
 
-#[derive(Serialize)]
-struct Heading {
-    title: String,
-    level: u16,
-    content: String,
-}
-
-pub fn render_heading(
+#[instrument(skip(div_builder, content))]
+pub fn render_heading<'f, 'd>(
     level: u16,
     title: Vec<norg::ParagraphSegment>,
     extensions: Vec<norg::DetachedModifierExtension>,
-    content: String,
-    write_to: &mut String,
-    hbr: &Handlebars,
-) -> miette::Result<()> {
-    debug!("rendering heading: title {title:?}, with _content: {content:?}, extensions: {extensions:?}");
-    let title_text = title.iter().try_fold(
-        String::new(),
-        |mut acc, segment| -> miette::Result<String> {
-            paragraph::render_paragraph(segment, &mut acc, hbr)?;
-            Ok(acc)
-        },
-    )?;
+    content: Vec<norg::NorgAST>,
+    footnotes: &'f mut Vec<(
+        Vec<norg::ParagraphSegment>,
+        Vec<norg::DetachedModifierExtension>,
+        Vec<norg::NorgASTFlat>,
+    )>,
+    div_builder: &'d mut html::text_content::builders::DivisionBuilder,
+) -> &'d mut html::text_content::builders::DivisionBuilder {
+    trace!("rendering heading");
+
+    let title_text = paragraph::render_paragraph_to_string(&title);
+    debug!(?title, "adding heading");
     // this needs to be applied first since modifiers which are applied at the end should not be applied to inner lists
-    let title_text_with_ext = extensions
-        .into_iter()
-        .try_fold(title_text.clone(), |acc, extension| {
-            super::extensions::apply_extension(&extension, &acc, hbr)
-        })
-        .unwrap_or_else(|e| {
-            error!(?e, "Couldn't render the extension");
-            title_text
+    extensions.into_iter().for_each(|extension| {
+        div_builder.span(|spb| super::extensions::apply_extension(extension, spb));
+    });
+    div_builder.division(|hdiv| match level {
+        1 => hdiv.heading_1(|hb| hb.class("heading").text(title_text)),
+        2 => hdiv.heading_2(|hb| hb.class("heading").text(title_text)),
+        3 => hdiv.heading_3(|hb| hb.class("heading").text(title_text)),
+        4 => hdiv.heading_4(|hb| hb.class("heading").text(title_text)),
+        5 => hdiv.heading_5(|hb| hb.class("heading").text(title_text)),
+        _ => hdiv.heading_6(|hb| hb.class("heading").text(title_text)),
+    });
+
+    if !content.is_empty() {
+        div_builder.division(|cdiv| {
+            cdiv.class("content-wrapper");
+            let content_iter = content.into_iter().peekable();
+            super::render_ast(content_iter, footnotes, cdiv);
+            cdiv
         });
-    let heading = Heading {
-        title: title_text_with_ext,
-        level,
-        content,
-    };
-    let rendered_string = hbr
-        .render("heading", &heading)
-        .expect("Couldn't render heading");
-    debug!("writing heading: {rendered_string}");
-    write_to.push_str(&rendered_string);
-    Ok(())
-}
-
-/// helper for rendering heading level
-fn heading_level_calculate(
-    helper: &handlebars::Helper,
-    _hbr: &handlebars::Handlebars,
-    _context: &handlebars::Context,
-    _rc: &mut handlebars::RenderContext,
-    out: &mut dyn handlebars::Output,
-) -> handlebars::HelperResult {
-    // get the indentation level
-    let serde_json::Value::Number(indent_level) = helper.param(0).map(|i| i.value()).ok_or(
-        handlebars::RenderErrorReason::ParamNotFoundForIndex("Couldn't get level", 0),
-    )?
-    else {
-        // value is not integer
-        return Err(handlebars::RenderErrorReason::InvalidParamType(
-            "Expected integer indentation level",
-        )
-        .into());
-    };
-    let indent_level =
-        indent_level
-            .as_i64()
-            .ok_or(handlebars::RenderErrorReason::InvalidParamType(
-                "Too big to hold in integer",
-            ))?;
-    // heading should start with 1, but if it is not then
-    let indent_level = indent_level.saturating_sub(1) * 2;
-    out.write(&indent_level.to_string())?;
-    Ok(())
-}
-
-/// register all the helper functions from this module
-pub fn registser_helpers(hbr: &mut handlebars::Handlebars) {
-    hbr.register_helper("heading_indent_level", Box::new(heading_level_calculate));
+    }
+    div_builder
 }

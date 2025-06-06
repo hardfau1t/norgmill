@@ -1,3 +1,4 @@
+#![recursion_limit = "512"]
 use std::sync::Arc;
 
 use axum::{
@@ -13,12 +14,11 @@ use tokio::net::TcpListener;
 use tracing::{debug, error, info, instrument, level_filters::LevelFilter, trace};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 mod constants;
-mod renderer;
 mod page;
+mod renderer;
 
 #[derive(Debug, Clone)]
 struct AppState {
-    hbr: handlebars::Handlebars<'static>,
     root_dir: std::path::PathBuf,
 }
 
@@ -28,10 +28,8 @@ struct NorgPage {
     body: String,
 }
 
-#[instrument(skip(hbr))]
 async fn render_norg_file<'a>(
     file_path: std::path::PathBuf,
-    hbr: &'a handlebars::Handlebars<'a>,
 ) -> Result<Html<String>, http::StatusCode> {
     trace!("rendering norg file");
     let content = tokio::fs::read_to_string(&file_path)
@@ -42,29 +40,19 @@ async fn render_norg_file<'a>(
             error!("failed to read {e}");
             http::StatusCode::NOT_FOUND
         })?;
-    let body = renderer::parse_and_render_body(&content, hbr).map_err(|e| {
-        error!("failed to render body: {e}");
-        http::StatusCode::INTERNAL_SERVER_ERROR
-    })?;
 
-    debug!("norg page: {body}");
-    let norg_page = NorgPage {
-        title: file_path
-            .file_stem()
-            .expect("norg file without stem cannot be present")
-            .to_string_lossy()
-            .to_string(),
-        body,
-    };
-    let page = hbr
-        .render("base", &norg_page)
-        .into_diagnostic()
-        .wrap_err("Couldn't render base template")
-        .map_err(|e| {
-            error!("failed to render: {e}");
-            http::StatusCode::INTERNAL_SERVER_ERROR
-        })?;
-    Ok(Html(page))
+    let title = file_path
+        .file_stem()
+        .expect("norg file without stem cannot be present")
+        .to_string_lossy()
+        .to_string();
+    let page = html::root::Html::builder()
+        .title(title)
+        .body(|builder| {
+            renderer::parse_and_render_body(&content, builder).expect("Couldn't parse the file")
+        })
+        .build();
+    Ok(Html(page.to_string()))
 }
 
 async fn system_files(
@@ -76,7 +64,7 @@ async fn system_files(
     let mut file_path = std::path::PathBuf::from("/");
     file_path.push(system_path);
     if file_path.extension().is_some_and(|e| e == "norg") {
-        render_norg_file(file_path, &state.hbr).await
+        render_norg_file(file_path).await
     } else {
         Err(http::StatusCode::NOT_IMPLEMENTED)
     }
@@ -88,7 +76,7 @@ async fn index(
 ) -> Result<Html<String>, http::StatusCode> {
     let mut file_path = state.root_dir.clone();
     file_path.push(&norg_file_path);
-    render_norg_file(file_path, &state.hbr).await
+    render_norg_file(file_path).await
 }
 
 #[derive(Debug, Clone, Subcommand)]
@@ -96,12 +84,10 @@ enum Functionality {
     Serve {
         #[arg(short, long)]
         /// automatically refresh templates without restarting
+        /// NOTE: Currently it is not working
         dev_mode: bool,
         #[arg(short, long)]
         root_dir: std::path::PathBuf,
-    },
-    DumpAst {
-        path: std::path::PathBuf,
     },
 }
 
@@ -116,17 +102,6 @@ struct CmdlineArgs {
 #[instrument(skip(dev_mode))]
 async fn serve(root_dir: std::path::PathBuf, dev_mode: bool) -> miette::Result<()> {
     info!("starting server");
-
-    let mut handlebars_registry = handlebars::Handlebars::new();
-    handlebars_registry.set_dev_mode(dev_mode);
-
-    let load_options = handlebars::DirectorySourceOptions::default();
-    handlebars_registry
-        .register_templates_directory("./templates", load_options)
-        .into_diagnostic()
-        .wrap_err("Couldn't load templates")?;
-
-    renderer::registser_helpers(&mut handlebars_registry);
 
     let app = Router::new()
         .route(
@@ -148,10 +123,7 @@ async fn serve(root_dir: std::path::PathBuf, dev_mode: bool) -> miette::Result<(
             tower_http::services::ServeDir::new("/"),
         )
         .layer(tower_http::trace::TraceLayer::new_for_http())
-        .with_state(std::sync::Arc::new(AppState {
-            root_dir,
-            hbr: handlebars_registry,
-        }));
+        .with_state(std::sync::Arc::new(AppState { root_dir }));
 
     let listener = TcpListener::bind("0.0.0.0:8080")
         .await
@@ -217,7 +189,6 @@ async fn main() -> miette::Result<()> {
         Functionality::Serve { dev_mode, root_dir } => serve(root_dir, dev_mode)
             .await
             .wrap_err("Couldn't run the http server")?,
-        Functionality::DumpAst { path } => renderer::dump_ast(path).await?,
     };
     Ok(())
 }

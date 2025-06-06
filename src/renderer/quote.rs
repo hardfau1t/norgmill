@@ -1,49 +1,37 @@
 //! module which does rendering of quotes
-use crate::renderer::paragraph;
-use handlebars::Handlebars;
-use miette::{Context, IntoDiagnostic};
-use serde::Serialize;
-use tracing::{debug, instrument, trace, warn};
+use tracing::{error, instrument, trace, warn};
 
-#[derive(Serialize)]
-struct Quote {
-    content: String,
-    level: u16,
-    children: Vec<String>,
-}
-
-#[instrument(skip(extensions, inner_content, hbr))]
-pub fn render_quote(
+#[instrument(skip(extensions, qbuilder))]
+pub fn render_quote<'n, 'b>(
     level: u16,
     extensions: Vec<norg::DetachedModifierExtension>,
     text: Box<norg::NorgASTFlat>,
-    inner_content: Vec<norg::NorgAST>,
-    hbr: &Handlebars,
-) -> miette::Result<String> {
-    debug!("Writing Quote with extensions:{extensions:?}, text: {text:?}, inner_content: {inner_content:?}");
+    inner_quotes: Vec<norg::NorgAST>,
+    qbuilder: &'b mut html::text_content::builders::BlockQuoteBuilder,
+) -> &'b mut html::text_content::builders::BlockQuoteBuilder {
+    trace!("rendering quote");
     if !extensions.is_empty() {
         warn!("Quote has extensions which is not supposed be, if things have changed, then raise issue to fix this");
     }
-    let rendered_quote_text = super::render_flat_ast(&text, hbr)?;
-    let children = inner_content
-        .into_iter()
-        .filter_map(|inner| {
-            let mut context = super::NorgContext::default();
-            match super::render_ast(inner, &mut context, hbr) {
-                Ok(rendered_inner) => Some(rendered_inner),
-                Err(e) => {
-                    warn!("Couldn't render quotes inner ast: {e:?}");
-                    None
-                }
-            }
-        })
-        .collect();
-    let quote = Quote {
-        content: rendered_quote_text,
-        level,
-        children,
-    };
-    hbr.render("quote", &quote)
-        .into_diagnostic()
-        .wrap_err("Couldn't render quote")
+    qbuilder.division(|dbuilder| super::render_flat_ast(&text, dbuilder));
+
+    for inner_quote in inner_quotes {
+        // only quotes are allowed in quotes,
+        // TODO: This has to be fixed in parser
+        if let norg::NorgAST::NestableDetachedModifier {
+            modifier_type: norg::NestableDetachedModifier::Quote,
+            level: inner_level,
+            extensions: inner_extensions,
+            text: inner_text,
+            content: inner_content,
+        } = inner_quote
+        {
+            qbuilder.block_quote(|qb| {
+                render_quote(inner_level, inner_extensions, inner_text, inner_content, qb)
+            });
+        } else {
+            error!(tokens=?inner_quote, "Unexpected tokens found in quotes, only quotes are allowed")
+        }
+    }
+    qbuilder
 }
