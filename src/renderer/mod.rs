@@ -7,6 +7,7 @@ mod definition;
 mod extensions;
 mod heading;
 mod link;
+mod list;
 mod paragraph;
 mod quote;
 mod table;
@@ -47,10 +48,80 @@ where
                             quote::render_quote(level, extensions, text, content, qb)
                         });
                     }
-                    // no need to check if the item is of different type, if it is then it will be flushed at the beginning of the loop
-                    _ => {
-                        error!(?modifier_type, "Unsupported nestable detached modifier");
+                    norg::NestableDetachedModifier::UnorderedList => {
+                        div_builder.unordered_list(|builder| {
+                            list::render_unordered_list(
+                                level,
+                                extensions,
+                                text,
+                                content,
+                                builder,
+                            );
+                            // check if next tokens are also belongs to this list
+                            while let Some(norg::NorgAST::NestableDetachedModifier {
+                                level: n_level,
+                                extensions: n_extensions,
+                                text: n_text,
+                                content: n_content,
+                                ..
+                            }) = tokens.next_if(|t| {
+                                matches!(
+                                    t,
+                                    norg::NorgAST::NestableDetachedModifier {
+                                        modifier_type:
+                                            norg::NestableDetachedModifier::UnorderedList,
+                                        ..
+                                    }
+                                )
+                            }) {
+                                list::render_unordered_list(
+                                    n_level,
+                                    n_extensions,
+                                    n_text,
+                                    n_content,
+                                    builder,
+                                );
+                            }
+                            builder
+                        });
                     }
+                    norg::NestableDetachedModifier::OrderedList => {
+                        div_builder.ordered_list(|builder| {
+                            list::render_ordered_list(
+                                level,
+                                extensions,
+                                text,
+                                content,
+                                builder,
+                            );
+                            // check if the next items are also part of list
+                            while let Some(norg::NorgAST::NestableDetachedModifier {
+                                level: n_level,
+                                extensions: n_extensions,
+                                text: n_text,
+                                content: n_content,
+                                ..
+                            }) = tokens.next_if(|t| {
+                                matches!(
+                                    t,
+                                    norg::NorgAST::NestableDetachedModifier {
+                                        modifier_type:
+                                            norg::NestableDetachedModifier::OrderedList,
+                                        ..
+                                    }
+                                )
+                            }) {
+                                list::render_ordered_list(
+                                    n_level,
+                                    n_extensions,
+                                    n_text,
+                                    n_content,
+                                    builder,
+                                );
+                            }
+                            builder
+                        });
+                    } // no need to check if the item is of different type, if it is then it will be flushed at the beginning of the loop
                 };
             }
 

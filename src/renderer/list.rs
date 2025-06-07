@@ -1,0 +1,55 @@
+use std::iter::Peekable;
+
+pub fn render_unordered_list<'b>(
+    level: u16,
+    extensions: Vec<norg::DetachedModifierExtension>,
+    text: Box<norg::NorgASTFlat>,
+    inner_content: Vec<norg::NorgAST>,
+    builder: &'b mut html::text_content::builders::UnorderedListBuilder,
+) -> &'b mut html::text_content::builders::UnorderedListBuilder
+where
+{
+    // TODO: replace this and take from root footnote builder
+    // but footnote is not allowed in list element
+    let mut footnotes = Vec::new();
+    builder.list_item(|item_builder| {
+        item_builder.division(|dbuilder| super::render_flat_ast(&text, dbuilder));
+        if !inner_content.is_empty() {
+            item_builder.division(|dbuilder| {
+                super::render_ast(
+                    inner_content.into_iter().peekable(),
+                    &mut footnotes,
+                    dbuilder,
+                )
+            });
+        }
+        item_builder
+    });
+    builder
+}
+
+pub fn render_ordered_list<'b>(
+    level: u16,
+    extensions: Vec<norg::DetachedModifierExtension>,
+    text: Box<norg::NorgASTFlat>,
+    inner_content: Vec<norg::NorgAST>,
+    builder: &'b mut html::text_content::builders::OrderedListBuilder,
+) -> &'b mut html::text_content::builders::OrderedListBuilder {
+    // TODO: replace this and take from root footnote builder
+    // but footnote is not allowed in list element
+    let mut footnotes = Vec::new();
+    builder.list_item(|item_builder| {
+        item_builder.division(|dbuilder| super::render_flat_ast(&text, dbuilder));
+        if !inner_content.is_empty() {
+            item_builder.division(|dbuilder| {
+                super::render_ast(
+                    inner_content.into_iter().peekable(),
+                    &mut footnotes,
+                    dbuilder,
+                )
+            });
+        }
+        item_builder
+    });
+    builder
+}

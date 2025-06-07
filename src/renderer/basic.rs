@@ -7,11 +7,11 @@ use super::paragraph;
 type Modifier = char;
 
 #[instrument(skip(content, builder))]
-pub fn render_attached(
+pub fn render_attached<'b>(
     modifier: Modifier,
     content: &[norg::ParagraphSegment],
-    builder: &mut html::text_content::builders::ParagraphBuilder,
-) {
+    builder: &'b mut html::text_content::builders::ParagraphBuilder,
+) -> &'b mut html::text_content::builders::ParagraphBuilder {
     // render segments first
     let segments_collector = paragraph::render_paragraph_to_string(content);
 
@@ -64,7 +64,7 @@ pub fn render_attached(
 
         _ => {
             warn!("unknown modifier");
-            return;
         }
     };
+    builder
 }

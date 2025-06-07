@@ -20,7 +20,9 @@ pub fn render_paragraph<'b>(
         norg::ParagraphSegment::AttachedModifier {
             modifier_type,
             content,
-        } => basic::render_attached(*modifier_type, content, builder),
+        } => {
+            basic::render_attached(*modifier_type, content, builder);
+        }
         //ParagraphSegment::AttachedModifierOpener(_) => todo!(),
         //ParagraphSegment::AttachedModifierOpenerFail(_) => todo!(),
         //ParagraphSegment::AttachedModifierCloserCandidate(_) => todo!(),
@@ -70,6 +72,61 @@ pub fn render_paragraph_to_string(segments: &[norg::ParagraphSegment]) -> String
         .build()
         .children()
         .iter()
-        .map(|c| c.to_string())
-        .collect::<String>()
+        .map(|i| i.to_string())
+        .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use norg::ParagraphSegment;
+    use norg::ParagraphSegmentToken;
+
+    #[test]
+    fn test_render_paragraph_text() {
+        let mut builder = html::text_content::Paragraph::builder();
+        let segment =
+            ParagraphSegment::Token(ParagraphSegmentToken::Text("hello world".to_string()));
+        render_paragraph(&segment, &mut builder);
+        let result = builder.build().to_string();
+        assert_eq!(result, "<p>hello world</p>");
+    }
+
+    #[test]
+    fn test_render_paragraph_whitespace() {
+        let mut builder = html::text_content::Paragraph::builder();
+        let segment = ParagraphSegment::Token(ParagraphSegmentToken::Whitespace);
+        render_paragraph(&segment, &mut builder);
+        let result = builder.build().to_string();
+        assert_eq!(result, "<p> </p>");
+    }
+
+    #[test]
+    fn test_render_paragraph_special() {
+        let mut builder = html::text_content::Paragraph::builder();
+        let segment = ParagraphSegment::Token(ParagraphSegmentToken::Special('&'));
+        render_paragraph(&segment, &mut builder);
+        let result = builder.build().to_string();
+        assert_eq!(result, "<p>&amp;</p>");
+    }
+
+    #[test]
+    fn test_render_paragraph_escape() {
+        let mut builder = html::text_content::Paragraph::builder();
+        let segment = ParagraphSegment::Token(ParagraphSegmentToken::Escape('<'));
+        render_paragraph(&segment, &mut builder);
+        let result = builder.build().to_string();
+        assert_eq!(result, "<p>&lt;</p>");
+    }
+
+    #[test]
+    fn test_render_paragraph_to_string_multiple_segments() {
+        let segments = vec![
+            ParagraphSegment::Token(ParagraphSegmentToken::Text("hello".to_string())),
+            ParagraphSegment::Token(ParagraphSegmentToken::Whitespace),
+            ParagraphSegment::Token(ParagraphSegmentToken::Text("world".to_string())),
+        ];
+        let result = render_paragraph_to_string(&segments);
+        assert_eq!(result, "hello world");
+    }
 }
