@@ -13,7 +13,6 @@ use tokio::net::TcpListener;
 use tracing::{debug, error, info, instrument, level_filters::LevelFilter, trace};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 mod constants;
-mod page;
 mod renderer;
 
 #[derive(Debug, Clone)]

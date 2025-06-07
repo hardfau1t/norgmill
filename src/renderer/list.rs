@@ -1,8 +1,7 @@
-use std::iter::Peekable;
 
 pub fn render_unordered_list<'b>(
-    level: u16,
-    extensions: Vec<norg::DetachedModifierExtension>,
+    _level: u16,
+    _extensions: Vec<norg::DetachedModifierExtension>,
     text: Box<norg::NorgASTFlat>,
     inner_content: Vec<norg::NorgAST>,
     builder: &'b mut html::text_content::builders::UnorderedListBuilder,
@@ -29,8 +28,8 @@ where
 }
 
 pub fn render_ordered_list<'b>(
-    level: u16,
-    extensions: Vec<norg::DetachedModifierExtension>,
+    _level: u16,
+    _extensions: Vec<norg::DetachedModifierExtension>,
     text: Box<norg::NorgASTFlat>,
     inner_content: Vec<norg::NorgAST>,
     builder: &'b mut html::text_content::builders::OrderedListBuilder,
