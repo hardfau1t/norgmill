@@ -252,11 +252,12 @@ fn render_flat_ast<'a, 'd>(
 ) -> &'d mut html::text_content::builders::DivisionBuilder {
     match ast {
         norg::NorgASTFlat::Paragraph(paras) => {
-            paras.into_iter().for_each(|para| {
-                dbuilder.paragraph(|pb| {
+            // Create a single paragraph for all content in list items
+            dbuilder.paragraph(|pb| {
+                for para in paras {
                     paragraph::render_paragraph(para, pb);
-                    pb
-                });
+                }
+                pb
             });
         }
         _ => {
