@@ -33,7 +33,7 @@ pub fn render_link<'t, 'p>(
                         Some('/') => {
                             // this path is from root of the workspace
                             Some(format!(
-                                "{}/{}",
+                                "{}{}",
                                 constants::CURRENT_WORKSPACE_PATH,
                                 norg_path_iter.as_str().trim_start(),
                             ))
@@ -55,7 +55,7 @@ pub fn render_link<'t, 'p>(
                 '~' => {
                     // this is norg file from home directory
                     Some(format!(
-                        "{}/{}",
+                        "{}{}",
                         constants::HOME_PATH,
                         norg_path_iter.as_str().trim_start(),
                     ))
@@ -77,7 +77,7 @@ pub fn render_link<'t, 'p>(
                     write!(
                         link,
                         "#{}_h{}",
-                        paragraph::render_paragraph_to_string(title),
+                        paragraph::render_paragraph_to_string(title).replace(' ', "_"),
                         level
                     ).unwrap();
                     Some(link)
@@ -90,12 +90,12 @@ pub fn render_link<'t, 'p>(
                 }
                 norg::LinkTarget::Footnote(title) => {
                     let mut link = norg_file_path.unwrap_or_default();
-                    write!(link, "#{}_f", paragraph::render_paragraph_to_string(title)).unwrap();
+                    write!(link, "#{}_f", paragraph::render_paragraph_to_string(title).replace(' ', "_")).unwrap();
                     Some(link)
                 }
                 norg::LinkTarget::Definition(title) => {
                     let mut link = norg_file_path.unwrap_or_default();
-                    write!(link, "#{}_d", paragraph::render_paragraph_to_string(title)).unwrap();
+                    write!(link, "#{}_d", paragraph::render_paragraph_to_string(title).replace(' ', "_")).unwrap();
                     Some(link)
                 }
                 norg::LinkTarget::Wiki(title) => {
@@ -128,7 +128,7 @@ pub fn render_link<'t, 'p>(
                         Some('~') => {
                             // home raw file path
                             Some(format!(
-                                "{}/{}",
+                                "{}{}",
                                 constants::HOME_PATH,
                                 raw_path_iter.as_str()
                             ))
