@@ -15,7 +15,7 @@ pub fn render_paragraph<'b>(
         }
         norg::ParagraphSegment::Token(norg::ParagraphSegmentToken::Special(chr))
         | norg::ParagraphSegment::Token(norg::ParagraphSegmentToken::Escape(chr)) => {
-            builder.text(chr.to_string());
+            builder.text(chr.to_string().replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;"));
         }
         norg::ParagraphSegment::AttachedModifier {
             modifier_type,
