@@ -1,0 +1,263 @@
+* Norg Token Test File
+  This file aims to include examples of all Norg tokens as per the specification.
+
+** Preliminaries
+
+*** Paragraphs and Words
+This is a paragraph with several words.
+It can span multiple lines.
+
+This is another paragraph, separated by a blank line.
+
+*** Whitespace and Line Endings
+  This line has leading whitespace.
+This line has a line ending.
+
+** Detached Modifiers
+
+*** Structural Detached Modifiers
+
+**** Headings
+* Heading Level 1
+** Heading Level 2
+*** Heading Level 3
+**** Heading Level 4
+***** Heading Level 5
+****** Heading Level 6
+
+*** Nestable Detached Modifiers
+
+**** Unordered Lists
+- Item 1
+- Item 2
+  - Sub-item 2.1 (Note: Indentation here is for readability, Norg uses leading `-` count)
+-- Sub-item 2.1 (Actual Norg syntax for level 2)
+--- Sub-item 2.1.1
+---- Sub-item 2.1.1.1
+----- Sub-item 2.1.1.1.1
+------ Sub-item 2.1.1.1.1.1
+- Item 3
+  This is part of Item 3.
+
+**** Ordered Lists
+~ Item A
+~ Item B
+  ~~ Sub-item B.1
+  ~~~ Sub-item B.1.1
+  ~~~~ Sub-item B.1.1.1
+  ~~~~~ Sub-item B.1.1.1.1
+  ~~~~~~ Sub-item B.1.1.1.1.1
+~ Item C
+  This is part of Item C.
+
+**** Quotes
+> This is a quote.
+> It can span multiple lines.
+>> This is a nested quote.
+>>> And another level of nesting.
+>
+> This is still part of the first quote after a blank line within the quote block.
+
+*** Range-able Detached Modifiers
+
+**** Definitions
+$ Definition Term
+  This is the definition content.
+  It can span multiple lines.
+$ Another Definition Term
+  Content for the second definition.
+
+**** Footnotes
+^ Footnote Label
+  This is the content of the footnote.
+  It can also span multiple lines.
+^ Another Footnote
+  Content for another footnote.
+
+**** Table Cells (Illustrative - full table structure is more complex)
+: Cell 1 content
+: Cell 2 content
+  This is also part of Cell 2.
+:: Sub-cell 2.1 (Conceptual, actual table structure is row-based)
+
+**** Attributes (as Detached Modifiers)
+% class: important
+% id: section-1
+  This content has attributes.
+
+*** Delimiting Modifiers
+
+**** Horizontal Rule
+---
+
+**** Weak Delimiting Modifier
+===
+
+** Attached Modifiers
+
+*** Standard Attached Modifiers
+This is *bold text*.
+This is /italic text/.
+This is _underline text_.
+This is -strikethrough text-.
+This is !spoiler text!.
+This is ^superscript^ text.
+This is ,subscript, text.
+This is %inline comment% text (this comment part might not render visibly).
+This is an \*escaped asterisk\*.
+This is a \/escaped slash\/.
+
+*** Free-form Attached Modifiers
+This is verbatim text: |`verbatim`|.
+Inline math: |$$E=mc^2$$|.
+Inline code: |`fn main() { println!(\"Hello\"); }`|.
+Variables: |&my_var&|.
+Null modifier: |--this might be ignored or have special meaning--|.
+
+*** Escaping
+This is an escaped asterisk: \*.
+This is an escaped slash: \/.
+This is an escaped backslash: \\.
+This is an escaped {curly brace}.
+
+** Tags
+
+*** Standard Ranged Tags
+|example
+  This is an example block.
+|end
+
+|comment
+  This is a comment block.
+|end
+
+|custom_tag
+  Content of a custom standard ranged tag.
+|end
+
+*** Verbatim Ranged Tags
+@code rust
+fn main() {
+    println!("Hello, Norg!");
+}
+@end
+
+@verbatim
+This text will be rendered as-is,
+  including   extra   spaces and
+new lines.
+@end
+
+*** Infirm Tags
+.important
+This paragraph is marked as important.
+
+.note
+Another paragraph with an infirm tag.
+
+*** Carryover Tags
++todo
+This is a todo item.
+  This is still part of the todo.
+
++urgent
+Another item with a carryover tag.
+
+*** Infecting Tags
+#project
+* Project Alpha
+  This heading and its content are part of #project.
+
+#draft
+This paragraph is a draft.
+
+*** Macro Tags (Conceptual, as execution is not part of basic tokenization)
+=define_variable name="World"
+Hello, {&name}&!
+
+=include file="another.norg"
+
+** Linkables
+
+*** Links
+
+**** URL
+{https://example.com}
+{https://example.com}[Example Site]
+
+**** File Path
+System Root: {:/path/to/some/file.norg}
+Home Directory: {:~/documents/notes.norg}
+Current Workspace: {:$/project/main.norg}
+Other Workspace: {:$shared_docs/specs.norg}
+Relative Path: {:../relative/file.norg}
+File with description: {:/abs/file.norg}[Absolute File Link]
+
+**** Line Number
+Line in current file: {123}
+Line in specific file: {:path/to/file.norg:42}
+Line in specific file with description: {:path/to/file.norg:42}[Go to line 42]
+
+**** Heading
+Heading in current file: {* My Section}
+Heading in specific file: {:another_file.norg:** Sub Section}
+Heading with description: {* My Section}[Jump to My Section]
+
+**** Footnote
+Footnote in current file: {^* My Footnote}
+Footnote in specific file: {:doc.norg:^* Important Note}
+Footnote with description: {^* My Footnote}[See footnote]
+
+**** Definition
+Definition in current file: {$ My Term}
+Definition in specific file: {:glossary.norg:$^ Key Concept}
+Definition with description: {$ My Term}[Explain My Term]
+
+**** Wiki Links
+{@ WikiPageName}
+{@ Namespace:WikiPageName}[Link to Wiki Page]
+
+**** Generic Links
+{& generic_target_id}
+{& another_target}[Generic Link Text]
+
+**** Timestamps
+{<2023-10-26>}
+{<2023-10-26 14:30>}[Event Time]
+
+**** Extendable Links (Conceptual)
+{=custom_link_type:value}
+{=doi:10.1000/xyz123}[DOI Link]
+
+*** Anchors
+This is some text with an [anchor here].
+Another [anchor with a description].
+
+*** Magic Links (Illustrative, exact behavior depends on parser extensions)
+<file:path/to/my_document.norg>
+<url:https://neorg.wiki>
+
+** Detached Modifier Extensions
+* (toc) Table of Contents Heading
+  This heading might have a 'toc' extension.
+- (checked) List item
+  This list item could be 'checked'.
+$ (source="Spec v1.0") Definition Term
+  This definition has a source extension.
+
+** Detached Modifier Suffixes
+* Heading with Suffix (status: done)
+  The suffix provides metadata.
+- List item with Suffix (priority: high)
+
+** Attributes (Attached to Modifiers)
+% class: "special-heading"
+* A Special Heading
+  This heading has an attribute attached.
+
+- % class: "urgent-item"
+  An urgent list item.
+
+** Intersecting Modifiers (Illustrative of concept)
+This is /italic and *bold /text** (Order and parsing can be complex).
+This is *bold and /italic* text/.
