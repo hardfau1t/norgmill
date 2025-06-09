@@ -16,25 +16,37 @@ fn test_link_rendering(norg_link_string: &str, _current_file_path: Option<&str>)
 #[test]
 fn test_link_with_url_target() {
     let html = test_link_rendering("{https://example.com}", None);
-    assert_eq!(html, "<body><div><p><a href=\"https://example.com\">https://example.com</a></p></div></body>");
+    assert_eq!(
+        html,
+        "<body><div><p><a href=\"https://example.com\">https://example.com</a></p></div></body>"
+    );
 }
 
 #[test]
 fn test_link_with_description() {
     let html = test_link_rendering("{https://example.com}[Example Website]", None);
-    assert_eq!(html, "<body><div><p><a href=\"https://example.com\">Example Website</a></p></div></body>");
+    assert_eq!(
+        html,
+        "<body><div><p><a href=\"https://example.com\">Example Website</a></p></div></body>"
+    );
 }
 
 #[test]
 fn test_link_with_heading_target_no_file_path() {
     let html = test_link_rendering("{* Test Heading}", None);
-    assert_eq!(html, "<body><div><p><a href=\"#Test_Heading_h1\">#Test_Heading_h1</a></p></div></body>");
+    assert_eq!(
+        html,
+        "<body><div><p><a href=\"#Test_Heading_h1\">#Test_Heading_h1</a></p></div></body>"
+    );
 }
 
 #[test]
 fn test_link_with_workspace_file_and_description() {
     let html = test_link_rendering("{:$/folder/file:}[description]", None);
-    assert_eq!(html, "<body><div><p><a href=\"/view/current/folder/file\">description</a></p></div></body>");
+    assert_eq!(
+        html,
+        "<body><div><p><a href=\"/view/current/folder/file\">description</a></p></div></body>"
+    );
 }
 
 #[test]
@@ -109,20 +121,14 @@ fn test_link_with_path_target_relative() {
 #[test]
 fn test_link_with_empty_targets() {
     let html = test_link_rendering("{}", None);
-    assert_eq!(
-        html,
-        "<body><div><p><a href=\"#\">#</a></p></div></body>"
-    );
+    assert_eq!(html, "<body><div><p><a href=\"#\">#</a></p></div></body>");
 }
 
 // Tests for currently unsupported LinkTarget types (should default to href="#" or file_path + "#")
 #[test]
 fn test_link_with_line_number_target() {
     let html = test_link_rendering("{123}", None); // Correct Norg syntax for line number link
-    assert_eq!(
-        html,
-        "<body><div><p><a href=\"#\">#</a></p></div></body>"
-    );
+    assert_eq!(html, "<body><div><p><a href=\"#\">#</a></p></div></body>");
 }
 
 #[test]
@@ -137,10 +143,7 @@ fn test_link_with_line_number_target_with_file() {
 #[test]
 fn test_link_with_wiki_target() {
     let html = test_link_rendering("{@ wikipage}", None); // Correct Norg syntax for a wiki link
-    assert_eq!(
-        html,
-        "<body><div><p><a href=\"#\">#</a></p></div></body>"
-    );
+    assert_eq!(html, "<body><div><p><a href=\"#\">#</a></p></div></body>");
 }
 
 // #[test]

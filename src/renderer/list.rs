@@ -18,11 +18,7 @@ where
         if !inner_content.is_empty() {
             item_builder.division(|dbuilder| {
                 let mut tokens = inner_content.into_iter().peekable();
-                super::render_ast(
-                    &mut tokens,
-                    &mut footnotes,
-                    dbuilder,
-                )
+                super::render_ast(&mut tokens, &mut footnotes, dbuilder)
             });
         }
         item_builder
@@ -46,11 +42,7 @@ pub fn render_ordered_list<'b>(
         if !inner_content.is_empty() {
             item_builder.division(|dbuilder| {
                 let mut tokens = inner_content.into_iter().peekable();
-                super::render_ast(
-                    &mut tokens,
-                    &mut footnotes,
-                    dbuilder,
-                )
+                super::render_ast(&mut tokens, &mut footnotes, dbuilder)
             });
         }
         item_builder

@@ -8,7 +8,7 @@ pub fn render_definition<'n, 'd>(
     content: Vec<norg::NorgASTFlat>,
     dl_builder: &'d mut html::text_content::builders::DescriptionListBuilder,
 ) -> &'d mut html::text_content::builders::DescriptionListBuilder {
-  // FIX: this renders headings in separate lines for separate words
+    // FIX: this renders headings in separate lines for separate words
     trace!("rendering description list");
     if !extensions.is_empty() {
         warn!(extensions=?extensions, "extensions are not supported for definition" );

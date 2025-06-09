@@ -172,9 +172,8 @@ struct CmdlineArgs {
     command: Functionality,
 }
 
-#[instrument(skip(dev_mode))]
-async fn serve(root_dir: std::path::PathBuf, dev_mode: bool) -> miette::Result<()> {
-    debug!(root_dir = %root_dir.display(), dev_mode = %dev_mode, "Serve function called");
+#[instrument]
+async fn serve(root_dir: std::path::PathBuf) -> miette::Result<()> {
     info!("starting server");
 
     let app = Router::new()
@@ -270,7 +269,7 @@ async fn main() -> miette::Result<()> {
     debug!("log level set to {log_level}");
     info!(command = ?args.command, "Executing command");
     match args.command {
-        Functionality::Serve { dev_mode, root_dir } => serve(root_dir, dev_mode)
+        Functionality::Serve { root_dir } => serve(root_dir)
             .await
             .wrap_err("Couldn't run the http server")?,
     };
