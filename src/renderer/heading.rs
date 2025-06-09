@@ -35,8 +35,8 @@ pub fn render_heading<'f, 'd>(
     if !content.is_empty() {
         div_builder.division(|cdiv| {
             cdiv.class("content-wrapper");
-            let content_iter = content.into_iter().peekable();
-            super::render_ast(content_iter, footnotes, cdiv);
+            let mut content_iter = content.into_iter().peekable();
+            super::render_ast(&mut content_iter, footnotes, cdiv);
             cdiv
         });
     }

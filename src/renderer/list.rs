@@ -17,8 +17,9 @@ where
         item_builder.division(|dbuilder| super::render_flat_ast(&text, dbuilder));
         if !inner_content.is_empty() {
             item_builder.division(|dbuilder| {
+                let mut tokens = inner_content.into_iter().peekable();
                 super::render_ast(
-                    inner_content.into_iter().peekable(),
+                    &mut tokens,
                     &mut footnotes,
                     dbuilder,
                 )
@@ -44,8 +45,9 @@ pub fn render_ordered_list<'b>(
         item_builder.division(|dbuilder| super::render_flat_ast(&text, dbuilder));
         if !inner_content.is_empty() {
             item_builder.division(|dbuilder| {
+                let mut tokens = inner_content.into_iter().peekable();
                 super::render_ast(
-                    inner_content.into_iter().peekable(),
+                    &mut tokens,
                     &mut footnotes,
                     dbuilder,
                 )

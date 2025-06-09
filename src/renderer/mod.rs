@@ -14,7 +14,7 @@ mod table;
 mod verbatim;
 
 fn render_ast<'t, 'd, 's, Tokens>(
-    mut tokens: Peekable<Tokens>,
+    tokens: &mut Peekable<Tokens>,
     footnotes: &mut Vec<(
         Vec<norg::ParagraphSegment>,
         Vec<norg::DetachedModifierExtension>,
@@ -26,7 +26,7 @@ where
     Tokens: Iterator<Item = norg::NorgAST>,
 {
     trace!("rendering ast");
-    if let Some(token) = tokens.next() {
+    while let Some(token) = tokens.next() {
         match token {
             norg::NorgAST::Paragraph(p) => {
                 div_builder.paragraph(|para_builder| {
@@ -183,7 +183,6 @@ where
                 warn!("Rendering is not implemented for {token:?} item");
             }
         };
-        render_ast(tokens, footnotes, div_builder);
     }
     div_builder
 }
@@ -197,8 +196,11 @@ pub fn parse_and_render_body<'i, 'b>(
 
     let mut footnotes = Vec::new();
 
-    let token_iterator = tokens.into_iter().peekable();
-    body_builder.division(|div_builder| render_ast(token_iterator, &mut footnotes, div_builder));
+    let mut token_iterator = tokens.into_iter().peekable();
+    body_builder.division(|div_builder| {
+        render_ast(&mut token_iterator, &mut footnotes, div_builder);
+        div_builder
+    });
 
     if !footnotes.is_empty() {
         body_builder.footer(|fb| {
