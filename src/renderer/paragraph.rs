@@ -1,4 +1,4 @@
-use tracing::{warn, trace};
+use tracing::{trace, warn};
 
 use super::{basic, link};
 
@@ -6,7 +6,7 @@ pub fn render_paragraph<'b>(
     para: &norg::ParagraphSegment,
     builder: &'b mut html::text_content::builders::ParagraphBuilder,
 ) -> &'b mut html::text_content::builders::ParagraphBuilder {
-  trace!(para=?para,"rendering paragraph");
+    trace!(para=?para,"rendering paragraph");
     match para {
         norg::ParagraphSegment::Token(norg::ParagraphSegmentToken::Text(t)) => {
             builder.text(t.clone());
@@ -16,7 +16,12 @@ pub fn render_paragraph<'b>(
         }
         norg::ParagraphSegment::Token(norg::ParagraphSegmentToken::Special(chr))
         | norg::ParagraphSegment::Token(norg::ParagraphSegmentToken::Escape(chr)) => {
-            builder.text(chr.to_string().replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;"));
+            builder.text(
+                chr.to_string()
+                    .replace('&', "&amp;")
+                    .replace('<', "&lt;")
+                    .replace('>', "&gt;"),
+            );
         }
         norg::ParagraphSegment::AttachedModifier {
             modifier_type,
@@ -65,7 +70,7 @@ pub fn render_paragraph<'b>(
 
 /// Sometime All you want is text in given paragraph segments(ex. in link targets or description)
 pub fn render_paragraph_to_string(segments: &[norg::ParagraphSegment]) -> String {
-trace!(?segments, "rendering paragraph segments to string");
+    trace!(?segments, "rendering paragraph segments to string");
     let mut para_builder = html::text_content::Paragraph::builder();
     for segment in segments {
         render_paragraph(segment, &mut para_builder);

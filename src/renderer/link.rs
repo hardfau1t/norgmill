@@ -2,7 +2,7 @@
 
 use crate::{constants, renderer::paragraph};
 use std::fmt::Write;
-use tracing::{error, warn, trace, instrument};
+use tracing::{error, instrument, trace, warn};
 
 #[instrument(skip(para_builder, description_segments))]
 pub fn render_link<'t, 'p>(
@@ -11,7 +11,7 @@ pub fn render_link<'t, 'p>(
     description_segments: Option<&'t [norg::ParagraphSegment]>,
     para_builder: &'p mut html::text_content::builders::ParagraphBuilder,
 ) -> &'p mut html::text_content::builders::ParagraphBuilder {
-  trace!("rendering link");
+    trace!("rendering link");
     let norg_file_path = file_path
         .map(|norg_path| {
             let mut norg_path_iter = norg_path.trim_start().chars();
@@ -163,4 +163,3 @@ pub fn render_link<'t, 'p>(
 }
 
 // TODO: Create a function to generate fragment tags, that will be used to create anchor tags and link to that tag
-

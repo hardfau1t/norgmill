@@ -9,4 +9,3 @@ pub const SYSTEM_PATH: &'static str = "/view/root";
 
 /// this path is used to access files from home directory
 pub const HOME_PATH: &'static str = "/view/home";
-

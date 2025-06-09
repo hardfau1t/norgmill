@@ -1,6 +1,6 @@
 use std::iter::Peekable;
 
-use tracing::{debug, error, warn, trace};
+use tracing::{debug, error, trace, warn};
 
 mod basic;
 mod definition;
@@ -25,7 +25,7 @@ fn render_ast<'t, 'd, 's, Tokens>(
 where
     Tokens: Iterator<Item = norg::NorgAST>,
 {
-  trace!("rendering ast");
+    trace!("rendering ast");
     if let Some(token) = tokens.next() {
         match token {
             norg::NorgAST::Paragraph(p) => {
@@ -200,7 +200,7 @@ pub fn parse_and_render_body<'i, 'b>(
     let token_iterator = tokens.into_iter().peekable();
     body_builder.division(|div_builder| render_ast(token_iterator, &mut footnotes, div_builder));
 
-    if ! footnotes.is_empty() {
+    if !footnotes.is_empty() {
         body_builder.footer(|fb| {
             fb.ordered_list(|ol_builder| {
                 footnotes
@@ -240,7 +240,7 @@ fn render_flat_ast<'a, 'd>(
     ast: &'a norg::NorgASTFlat,
     dbuilder: &'d mut html::text_content::builders::DivisionBuilder,
 ) -> &'d mut html::text_content::builders::DivisionBuilder {
-  trace!(?ast, "rendering flat ast");
+    trace!(?ast, "rendering flat ast");
     match ast {
         norg::NorgASTFlat::Paragraph(paras) => {
             // Create a single paragraph for all content in list items

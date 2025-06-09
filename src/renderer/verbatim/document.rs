@@ -55,7 +55,7 @@ pub fn render_document<'n, 'd>(
     content: String,
     dbuilder: &'d mut html::text_content::builders::DivisionBuilder,
 ) -> &'d mut html::text_content::builders::DivisionBuilder {
-  trace!( "rendering document");
+    trace!("rendering document");
     match name.first() {
         Some(s) if s == "meta" => {
             if !params.is_empty() {
