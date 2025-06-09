@@ -1,8 +1,7 @@
 //! this module handles rendering of links
 
 use crate::{constants, renderer::paragraph};
-use std::fmt::Write;
-use tracing::{error, instrument, trace, warn};
+use tracing::{debug, error, instrument, trace, warn};
 
 #[instrument(skip(para_builder, description_segments))]
 pub fn render_link<'t, 'p>(
@@ -65,48 +64,32 @@ pub fn render_link<'t, 'p>(
             }
         })
         .flatten();
+    debug!(?norg_file_path, "norg file found?");
 
-    let href = targets
+    let fragment_or_external_link = targets
         .first()
         .map(|target| {
             match target {
                 norg::LinkTarget::Heading { level, title } => {
-                    let mut link = norg_file_path.unwrap_or_default();
-                    write!(
-                        link,
+                    let link = format!(
                         "#{}_h{}",
                         paragraph::render_paragraph_to_string(title).replace(' ', "_"),
                         level
-                    )
-                    .unwrap();
+                    );
                     Some(link)
                 }
                 norg::LinkTarget::LineNumber(_) => {
-                    let mut link = norg_file_path.unwrap_or_default();
-                    link.push('#');
                     error!("<!-- Unsupported feature: line number on anchor -->");
-                    Some(link)
+                    Some("#".to_string())
                 }
-                norg::LinkTarget::Footnote(title) => {
-                    let mut link = norg_file_path.unwrap_or_default();
-                    write!(
-                        link,
-                        "#{}_f",
-                        paragraph::render_paragraph_to_string(title).replace(' ', "_")
-                    )
-                    .unwrap();
-                    Some(link)
-                }
-                norg::LinkTarget::Definition(title) => {
-                    let mut link = norg_file_path.unwrap_or_default();
-                    write!(
-                        link,
-                        "#{}_d",
-                        paragraph::render_paragraph_to_string(title).replace(' ', "_")
-                    )
-                    .unwrap();
-                    Some(link)
-                }
+                norg::LinkTarget::Footnote(title) => Some(format!(
+                    "#{}_f",
+                    paragraph::render_paragraph_to_string(title).replace(' ', "_")
+                )),
+                norg::LinkTarget::Definition(title) => Some(format!(
+                    "#{}_d",
+                    paragraph::render_paragraph_to_string(title).replace(' ', "_")
+                )),
                 norg::LinkTarget::Wiki(title) => {
                     error!(target = ?title, "wiki links are not yet supported");
                     None
@@ -153,8 +136,18 @@ pub fn render_link<'t, 'p>(
             }
         })
         .flatten();
+    debug!(?fragment_or_external_link, "href found?");
 
-    let href = href.unwrap_or("#".to_string());
+    let href = if let Some(mut norg_file_path) = norg_file_path {
+        if let Some(fragment) = fragment_or_external_link {
+            norg_file_path.push_str(&fragment);
+            norg_file_path
+        } else {
+            norg_file_path
+        }
+    } else {
+        fragment_or_external_link.unwrap_or("#".to_string())
+    };
 
     let title = description_segments
         .map(paragraph::render_paragraph_to_string)
