@@ -160,10 +160,6 @@ async fn render_current_workspace_file(
 enum Functionality {
     Serve {
         #[arg(short, long)]
-        /// automatically refresh templates without restarting
-        /// NOTE: Currently it is not working
-        dev_mode: bool,
-        #[arg(short, long)]
         root_dir: std::path::PathBuf,
     },
 }
