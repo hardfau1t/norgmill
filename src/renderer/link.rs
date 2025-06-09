@@ -159,7 +159,7 @@ pub fn render_link<'t, 'p>(
     let title = description_segments
         .map(paragraph::render_paragraph_to_string)
         .unwrap_or_else(|| href.clone());
-    para_builder.anchor(|ab| ab.href(href).title(|tb| tb.text(title)))
+    para_builder.anchor(|ab| ab.href(href).text(title))
 }
 
 // TODO: Create a function to generate fragment tags, that will be used to create anchor tags and link to that tag
