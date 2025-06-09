@@ -80,6 +80,11 @@ async fn render_current_workspace_file(
     trace!("rendering index file");
     let mut file_path = state.root_dir.clone();
     file_path.push(&norg_file_path);
+    // if the extension is not .norg then set it and load the norg file
+    if !file_path.extension().is_some_and(|ext| ext == "norg") {
+        debug!(original_path=?file_path,"setting .norg extension");
+        file_path.set_extension("norg");
+    };
     debug!(path = %file_path.display(), "Constructed full path for index route");
     render_norg_file(file_path).await
 }
