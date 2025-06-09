@@ -1,6 +1,6 @@
 
 use super::paragraph;
-use tracing::{instrument, trace, warn};
+use tracing::{debug, instrument, trace, warn};
 
 #[instrument(skip(extensions, content, dl_builder))]
 pub fn render_definition<'n, 'd>(
@@ -15,6 +15,7 @@ pub fn render_definition<'n, 'd>(
     }
 
     dl_builder.description_term(|dt_builder| {
+        debug!(num_title_segments = title.len(), "Rendering definition term");
         title.into_iter().for_each(|tseg| {
             dt_builder.paragraph(|pb| {
                 paragraph::render_paragraph(&tseg, pb);
@@ -31,5 +32,6 @@ pub fn render_definition<'n, 'd>(
         dd_builder
     });
 
+    debug!("Finished rendering definition term and details");
     dl_builder
 }

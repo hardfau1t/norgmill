@@ -9,18 +9,17 @@ use axum::{
 use clap::{Parser, Subcommand};
 use dotenv::dotenv;
 use miette::{miette, Context, IntoDiagnostic};
+use norgmill::{constants, renderer};
 use tokio::net::TcpListener;
 use tracing::{debug, error, info, instrument, level_filters::LevelFilter, trace};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-mod constants;
-mod renderer;
 
 #[derive(Debug, Clone)]
 struct AppState {
     root_dir: std::path::PathBuf,
 }
 
-
+#[instrument(skip(file_path))]
 async fn render_norg_file<'a>(
     file_path: std::path::PathBuf,
 ) -> Result<Html<String>, http::StatusCode> {
@@ -33,42 +32,55 @@ async fn render_norg_file<'a>(
             error!("failed to read {e}");
             http::StatusCode::NOT_FOUND
         })?;
+    debug!(path = %file_path.display(), "Successfully read file content");
 
     let title = file_path
         .file_stem()
         .expect("norg file without stem cannot be present")
         .to_string_lossy()
         .to_string();
-    let page = html::root::Html::builder()
-        .title(title)
-        .body(|builder| {
-            renderer::parse_and_render_body(&content, builder).expect("Couldn't parse the file")
-        })
-        .build();
+    let body = tokio::task::spawn_blocking(move || {
+        let mut builder = html::root::Body::builder();
+        renderer::parse_and_render_body(&content, &mut builder)
+            .expect("Couldn't parse the file")
+            .build()
+    })
+    .await
+    .expect("Couldn't generate html body");
+    let page = html::root::Html::builder().title(title).push(body).build();
+
+    debug!(path = %file_path.display(), "Successfully generated HTML page");
     Ok(Html(page.to_string()))
 }
 
+#[instrument(skip(_state))]
 async fn system_files(
-    State(state): State<Arc<AppState>>,
+    State(_state): State<Arc<AppState>>,
     Path(system_path): Path<std::path::PathBuf>,
 ) -> Result<Html<String>, http::StatusCode> {
     trace!("service system files: {system_path:?}");
     // this is required because `system_path` will not contain / at the beginning
     let mut file_path = std::path::PathBuf::from("/");
     file_path.push(system_path);
+    debug!(full_path = %file_path.display(), "Constructed full path for system file");
     if file_path.extension().is_some_and(|e| e == "norg") {
+        debug!("Identified as .norg file, proceeding to render.");
         render_norg_file(file_path).await
     } else {
+        error!("File not a .norg or not implemented, returning error.");
         Err(http::StatusCode::NOT_IMPLEMENTED)
     }
 }
 
+#[instrument(skip(state))]
 async fn index(
     State(state): State<Arc<AppState>>,
     Path(norg_file_path): Path<std::path::PathBuf>,
 ) -> Result<Html<String>, http::StatusCode> {
+    trace!("rendering index file");
     let mut file_path = state.root_dir.clone();
     file_path.push(&norg_file_path);
+    debug!(path = %file_path.display(), "Constructed full path for index route");
     render_norg_file(file_path).await
 }
 
@@ -94,6 +106,7 @@ struct CmdlineArgs {
 
 #[instrument(skip(dev_mode))]
 async fn serve(root_dir: std::path::PathBuf, dev_mode: bool) -> miette::Result<()> {
+    debug!(root_dir = %root_dir.display(), dev_mode = %dev_mode, "Serve function called");
     info!("starting server");
 
     let app = Router::new()
@@ -137,6 +150,7 @@ async fn serve(root_dir: std::path::PathBuf, dev_mode: bool) -> miette::Result<(
 }
 
 #[tokio::main]
+#[instrument]
 async fn main() -> miette::Result<()> {
     let args = CmdlineArgs::parse();
     //#[cfg(debug_assertions)]
@@ -178,6 +192,7 @@ async fn main() -> miette::Result<()> {
         .init();
 
     debug!("log level set to {log_level}");
+    info!(command = ?args.command, "Executing command");
     match args.command {
         Functionality::Serve { dev_mode, root_dir } => serve(root_dir, dev_mode)
             .await

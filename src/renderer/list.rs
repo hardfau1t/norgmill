@@ -1,3 +1,4 @@
+use tracing::trace;
 
 pub fn render_unordered_list<'b>(
     _level: u16,
@@ -8,6 +9,7 @@ pub fn render_unordered_list<'b>(
 ) -> &'b mut html::text_content::builders::UnorderedListBuilder
 where
 {
+  trace!("rendering unordered_list");
     // TODO: replace this and take from root footnote builder
     // but footnote is not allowed in list element
     let mut footnotes = Vec::new();
@@ -34,6 +36,7 @@ pub fn render_ordered_list<'b>(
     inner_content: Vec<norg::NorgAST>,
     builder: &'b mut html::text_content::builders::OrderedListBuilder,
 ) -> &'b mut html::text_content::builders::OrderedListBuilder {
+    trace!("rendering ordered");
     // TODO: replace this and take from root footnote builder
     // but footnote is not allowed in list element
     let mut footnotes = Vec::new();

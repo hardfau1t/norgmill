@@ -1,6 +1,6 @@
 use std::iter::Peekable;
 
-use tracing::{debug, error, warn};
+use tracing::{debug, error, warn, trace};
 
 mod basic;
 mod definition;
@@ -25,6 +25,7 @@ fn render_ast<'t, 'd, 's, Tokens>(
 where
     Tokens: Iterator<Item = norg::NorgAST>,
 {
+  trace!("rendering ast");
     if let Some(token) = tokens.next() {
         match token {
             norg::NorgAST::Paragraph(p) => {
@@ -50,13 +51,7 @@ where
                     }
                     norg::NestableDetachedModifier::UnorderedList => {
                         div_builder.unordered_list(|builder| {
-                            list::render_unordered_list(
-                                level,
-                                extensions,
-                                text,
-                                content,
-                                builder,
-                            );
+                            list::render_unordered_list(level, extensions, text, content, builder);
                             // check if next tokens are also belongs to this list
                             while let Some(norg::NorgAST::NestableDetachedModifier {
                                 level: n_level,
@@ -87,13 +82,7 @@ where
                     }
                     norg::NestableDetachedModifier::OrderedList => {
                         div_builder.ordered_list(|builder| {
-                            list::render_ordered_list(
-                                level,
-                                extensions,
-                                text,
-                                content,
-                                builder,
-                            );
+                            list::render_ordered_list(level, extensions, text, content, builder);
                             // check if the next items are also part of list
                             while let Some(norg::NorgAST::NestableDetachedModifier {
                                 level: n_level,
@@ -105,8 +94,7 @@ where
                                 matches!(
                                     t,
                                     norg::NorgAST::NestableDetachedModifier {
-                                        modifier_type:
-                                            norg::NestableDetachedModifier::OrderedList,
+                                        modifier_type: norg::NestableDetachedModifier::OrderedList,
                                         ..
                                     }
                                 )
@@ -212,36 +200,38 @@ pub fn parse_and_render_body<'i, 'b>(
     let token_iterator = tokens.into_iter().peekable();
     body_builder.division(|div_builder| render_ast(token_iterator, &mut footnotes, div_builder));
 
-    body_builder.footer(|fb| {
-        fb.ordered_list(|ol_builder| {
-            footnotes
-                .into_iter()
-                .for_each(|(title, _, foot_note_paras)| {
-                    let title_string = paragraph::render_paragraph_to_string(&title);
-                    ol_builder.list_item(|list_item_builder| {
-                        list_item_builder
-                            .id(format!("{title_string}_footnote"))
-                            .division(|divb| {
-                                foot_note_paras.into_iter().for_each(|fnote| {
-                                    divb.division(|pdiv| {
-                                        render_flat_ast(&fnote, pdiv);
-                                        pdiv
+    if ! footnotes.is_empty() {
+        body_builder.footer(|fb| {
+            fb.ordered_list(|ol_builder| {
+                footnotes
+                    .into_iter()
+                    .for_each(|(title, _, foot_note_paras)| {
+                        let title_string = paragraph::render_paragraph_to_string(&title);
+                        ol_builder.list_item(|list_item_builder| {
+                            list_item_builder
+                                .id(format!("{title_string}_footnote"))
+                                .division(|divb| {
+                                    foot_note_paras.into_iter().for_each(|fnote| {
+                                        divb.division(|pdiv| {
+                                            render_flat_ast(&fnote, pdiv);
+                                            pdiv
+                                        });
                                     });
-                                });
-                                divb
-                            })
-                            .anchor(|ab| {
-                                // TODO: create a backref for each footnote
-                                let backref_tag = format!("#{title_string}_footnote_backref");
-                                ab.href(backref_tag.clone())
-                                    .aria_label(backref_tag)
-                                    .text("↩")
-                            })
+                                    divb
+                                })
+                                .anchor(|ab| {
+                                    // TODO: create a backref for each footnote
+                                    let backref_tag = format!("#{title_string}_footnote_backref");
+                                    ab.href(backref_tag.clone())
+                                        .aria_label(backref_tag)
+                                        .text("↩")
+                                })
+                        });
                     });
-                });
-            ol_builder
-        })
-    });
+                ol_builder
+            })
+        });
+    }
     Ok(body_builder)
 }
 
@@ -250,6 +240,7 @@ fn render_flat_ast<'a, 'd>(
     ast: &'a norg::NorgASTFlat,
     dbuilder: &'d mut html::text_content::builders::DivisionBuilder,
 ) -> &'d mut html::text_content::builders::DivisionBuilder {
+  trace!(?ast, "rendering flat ast");
     match ast {
         norg::NorgASTFlat::Paragraph(paras) => {
             // Create a single paragraph for all content in list items
