@@ -7,6 +7,7 @@ default-run = "norgmill"
 [dependencies]
 axum = { version = "0.7.5", features = ["tracing", "tower-log"] }
 clap = { version = "4.5.17", features = ["derive"] }
+const_format = "0.2.34"
 dashmap = "6.1.0"
 dotenv = { version = "0.15.0", features = ["clap"] }
 html = "0.6.3"

@@ -73,7 +73,7 @@ async fn system_files(
 }
 
 #[instrument(skip(state))]
-async fn index(
+async fn render_current_workspace_file(
     State(state): State<Arc<AppState>>,
     Path(norg_file_path): Path<std::path::PathBuf>,
 ) -> Result<Html<String>, http::StatusCode> {
@@ -112,20 +112,23 @@ async fn serve(root_dir: std::path::PathBuf, dev_mode: bool) -> miette::Result<(
     let app = Router::new()
         .route(
             "/",
-            routing::get(|| async { Redirect::to("/workspace/index.norg") }),
+            routing::get(|| async { Redirect::to(constants::paths::CURRENT_WORKSPACE_ROOT) }),
         )
         .route(
-            "/workspace/",
-            routing::get(|| async { Redirect::to("/workspace/index.norg") }),
+            constants::CURRENT_WORKSPACE_PATH,
+            routing::get(|| async { Redirect::to(constants::paths::CURRENT_WORKSPACE_ROOT) }),
         )
         .route(
-            "/workspace",
-            routing::get(|| async { Redirect::to("/workspace/index.norg") }),
+            const_format::concatcp!(constants::CURRENT_WORKSPACE_PATH, "/"),
+            routing::get(|| async { Redirect::to(constants::paths::CURRENT_WORKSPACE_ROOT) }),
         )
-        .route("/workspace/*file_path", routing::get(index))
+        .route(
+            constants::paths::CURRENT_WORKSPACE_FILE,
+            routing::get(render_current_workspace_file),
+        )
         .nest_service("/static", tower_http::services::ServeDir::new("assets"))
         .nest_service(
-            &format!("/{}", constants::SYSTEM_PATH),
+            constants::paths::DIRECTORY_SERVE,
             tower_http::services::ServeDir::new("/"),
         )
         .layer(tower_http::trace::TraceLayer::new_for_http())
