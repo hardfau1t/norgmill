@@ -19,18 +19,12 @@ pub fn render_definition<'n, 'd>(
             num_title_segments = title.len(),
             "Rendering definition term"
         );
-        title.into_iter().for_each(|tseg| {
-            dt_builder.paragraph(|pb| {
-                paragraph::render_paragraph(&tseg, pb);
-                pb
-            });
-        });
-        dt_builder
+        dt_builder.push(paragraph::render_paragraph_to_string(&title))
     });
 
     dl_builder.description_details(|dd_builder| {
         content.into_iter().for_each(|cont_ast| {
-            dd_builder.division(|dv_builder| super::render_flat_ast(&cont_ast, dv_builder));
+            dd_builder.push(super::render_flat_ast(&cont_ast));
         });
         dd_builder
     });

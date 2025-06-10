@@ -1,7 +1,6 @@
 #![recursion_limit = "512"]
 
 use clap::Parser;
-use html::text_content::Division;
 use miette::{Context, IntoDiagnostic};
 use norgmill::renderer;
 use std::fs;
@@ -48,10 +47,8 @@ fn main() -> miette::Result<()> {
 
     debug!(bytes = norg_content.len(), "Read Norg content successfully");
 
-    let mut content_builder = Division::builder();
-    let content = renderer::parse_and_render_norg(&norg_content, &mut content_builder)
-        .wrap_err("Failed to parse and render Norg content")?
-        .build();
+    let content = renderer::parse_and_render_norg(&norg_content)
+        .wrap_err("Failed to parse and render Norg content")?;
 
     let title = args
         .input_file

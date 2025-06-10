@@ -2,10 +2,18 @@ use tracing::{trace, warn};
 
 use super::{basic, link};
 
-pub fn render_paragraph<'b>(
+pub fn render_paragraph(para_segments: &[norg::ParagraphSegment]) -> html::text_content::Paragraph {
+    let mut para_builder = html::text_content::Paragraph::builder();
+    para_segments
+        .iter()
+        .for_each(|segment| render_paragraph_segment(segment, &mut para_builder));
+    para_builder.build()
+}
+
+pub fn render_paragraph_segment<'b>(
     para: &norg::ParagraphSegment,
     builder: &'b mut html::text_content::builders::ParagraphBuilder,
-) -> &'b mut html::text_content::builders::ParagraphBuilder {
+) {
     trace!(para=?para,"rendering paragraph");
     match para {
         norg::ParagraphSegment::Token(norg::ParagraphSegmentToken::Text(t)) => {
@@ -65,18 +73,12 @@ pub fn render_paragraph<'b>(
             warn!("rendering para segment {para:?} is not yet implemented");
         }
     };
-    builder
 }
 
 /// Sometime All you want is text in given paragraph segments(ex. in link targets or description)
 pub fn render_paragraph_to_string(segments: &[norg::ParagraphSegment]) -> String {
     trace!(?segments, "rendering paragraph segments to string");
-    let mut para_builder = html::text_content::Paragraph::builder();
-    for segment in segments {
-        render_paragraph(segment, &mut para_builder);
-    }
-    para_builder
-        .build()
+    render_paragraph(segments)
         .children()
         .iter()
         .map(|i| i.to_string())
@@ -91,11 +93,10 @@ mod tests {
 
     #[test]
     fn test_render_paragraph_text() {
-        let mut builder = html::text_content::Paragraph::builder();
-        let segment =
-            ParagraphSegment::Token(ParagraphSegmentToken::Text("hello world".to_string()));
-        render_paragraph(&segment, &mut builder);
-        let result = builder.build().to_string();
+        let segment = [ParagraphSegment::Token(ParagraphSegmentToken::Text(
+            "hello world".to_string(),
+        ))];
+        let result = render_paragraph(&segment).to_string();
         assert_eq!(result, "<p>hello world</p>");
     }
 
@@ -103,7 +104,7 @@ mod tests {
     fn test_render_paragraph_whitespace() {
         let mut builder = html::text_content::Paragraph::builder();
         let segment = ParagraphSegment::Token(ParagraphSegmentToken::Whitespace);
-        render_paragraph(&segment, &mut builder);
+        render_paragraph_segment(&segment, &mut builder);
         let result = builder.build().to_string();
         assert_eq!(result, "<p> </p>");
     }
@@ -112,7 +113,7 @@ mod tests {
     fn test_render_paragraph_special() {
         let mut builder = html::text_content::Paragraph::builder();
         let segment = ParagraphSegment::Token(ParagraphSegmentToken::Special('&'));
-        render_paragraph(&segment, &mut builder);
+        render_paragraph_segment(&segment, &mut builder);
         let result = builder.build().to_string();
         assert_eq!(result, "<p>&amp;</p>");
     }
@@ -121,7 +122,7 @@ mod tests {
     fn test_render_paragraph_escape() {
         let mut builder = html::text_content::Paragraph::builder();
         let segment = ParagraphSegment::Token(ParagraphSegmentToken::Escape('<'));
-        render_paragraph(&segment, &mut builder);
+        render_paragraph_segment(&segment, &mut builder);
         let result = builder.build().to_string();
         assert_eq!(result, "<p>&lt;</p>");
     }

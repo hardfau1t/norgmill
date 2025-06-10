@@ -36,13 +36,11 @@ async fn render_norg_file<'a>(
         .to_string_lossy()
         .to_string();
     let content_div = tokio::task::spawn_blocking(move || {
-        let mut builder = html::text_content::Division::builder();
-        renderer::parse_and_render_norg(&content, &mut builder)
-            .expect("Couldn't parse the file")
-            .build()
+        renderer::parse_and_render_norg(&content).wrap_err("Couldn't parse the file")
     })
     .await
-    .expect("Couldn't generate html body");
+    .into_diagnostic()
+    .wrap_err("Couldn't spawn blocking thread")??;
     debug!(path = %file_path.display(), "Successfully generated HTML page");
     Ok((title, content_div))
 }
@@ -100,23 +98,46 @@ async fn read_and_render_file(
 }
 
 fn generate_html_page(title: String, content: html::text_content::Division) -> Html<String> {
-    let navigation_buttons = html::text_content::Division::builder()
-        .class("navigation")
-        .anchor(|anchor_b| {
-            anchor_b
-                .href(constants::CURRENT_WORKSPACE_PATH)
-                .text("home")
+    let navigation_buttons = html::content::Header::builder()
+        .class("site-header")
+        .division(|div_b| {
+            div_b
+                .class("header-content")
+                .heading_1(|hb| hb.class("site-title").text(title.clone()))
+                .navigation(|nav_b| {
+                    nav_b
+                        .anchor(|anchor_b| {
+                            anchor_b
+                                .href(constants::CURRENT_WORKSPACE_PATH)
+                                .text("Home")
+                        })
+                        .anchor(|anchor_b| anchor_b.href("#").text("Up"))
+                        .anchor(|anchor_b| anchor_b.href("#").text("Next"))
+                        .anchor(|anchor_b| anchor_b.href("#").text("Prev"))
+                })
         })
         .build();
     let body = html::root::Body::builder()
-        .push(navigation_buttons.clone())
-        .division(|div_b| div_b.class("text_content").push(content))
         .push(navigation_buttons)
+        .main(|main_b| {
+            main_b
+                .class("norg_content")
+                .article(|art_b| art_b.push(content))
+        })
         .build();
 
     Html(
         html::root::Html::builder()
-            .head(|hb| hb.title(|tb| tb.text(title)))
+            .head(|hb| {hb.title(|tb|
+                  tb.text(title))
+                  .lang("en")
+                  .meta(|mb| mb.charset("UTF-8"))
+                  .meta(|mb| mb.name("viewport").content("width=device-width, initial-scale=1.0"))
+                  .link(|link_builder| link_builder.rel("stylesheet").href("/static/style.css")) // TODO: replace href with reading while compile time
+                  .link(|lb| lb.rel("preconnect").href("https://fonts.googleapis.com"))
+                  .link(|lb| lb.rel("preconnect").href("https://fonts.gstatic.com"))
+                  .link(|lb| lb.rel("stylesheet").href("https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@600;700&family=Source+Serif+Pro:wght@400;700&display=swap"))
+            })
             .push(body)
             .build()
             .to_string(),

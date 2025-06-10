@@ -20,21 +20,17 @@ fn render_ast<'t, 'd, 's, Tokens>(
         Vec<norg::DetachedModifierExtension>,
         Vec<norg::NorgASTFlat>,
     )>,
-    div_builder: &'d mut html::text_content::builders::DivisionBuilder,
-) -> &'d mut html::text_content::builders::DivisionBuilder
+) -> html::text_content::Division
 where
     Tokens: Iterator<Item = norg::NorgAST>,
 {
     trace!("rendering ast");
+    let mut div_builder = html::text_content::Division::builder();
+    div_builder.class("content_block");
     while let Some(token) = tokens.next() {
         match token {
             norg::NorgAST::Paragraph(p) => {
-                div_builder.paragraph(|para_builder| {
-                    p.iter().for_each(|segment| {
-                        paragraph::render_paragraph(segment, para_builder);
-                    });
-                    para_builder
-                });
+                div_builder.push(paragraph::render_paragraph(&p));
             }
             norg::NorgAST::NestableDetachedModifier {
                 modifier_type,
@@ -45,9 +41,7 @@ where
             } => {
                 match modifier_type {
                     norg::NestableDetachedModifier::Quote => {
-                        div_builder.block_quote(|qb| {
-                            quote::render_quote(level, extensions, text, content, qb)
-                        });
+                        div_builder.push(quote::render_quote(level, extensions, text, content));
                     }
                     norg::NestableDetachedModifier::UnorderedList => {
                         div_builder.unordered_list(|builder| {
@@ -121,30 +115,34 @@ where
             } => {
                 match modifier_type {
                     norg::RangeableDetachedModifier::Definition => {
-                        div_builder.description_list(|dl_builder| {
-                            definition::render_definition(title, extensions, content, dl_builder);
-                            // if there are more definitions then add it to the same list
-                            // next_if cannot be replaced with next(), if you do that then when let fails to match that token is lost
-                            while let Some(norg::NorgAST::RangeableDetachedModifier {
+                        let mut dl_builder = html::text_content::DescriptionList::builder();
+
+                        definition::render_definition(title, extensions, content, &mut dl_builder);
+                        // if there are more definitions then add it to the same list
+                        // next_if cannot be replaced with next(), if you do that then when let fails to match that token is lost
+                        while let Some(norg::NorgAST::RangeableDetachedModifier {
+                            title,
+                            extensions,
+                            content,
+                            ..
+                        }) = tokens.next_if(|tkn| {
+                            matches!(
+                                tkn,
+                                norg::NorgAST::RangeableDetachedModifier {
+                                    modifier_type: norg::RangeableDetachedModifier::Definition,
+                                    ..
+                                }
+                            )
+                        }) {
+                            definition::render_definition(
                                 title,
                                 extensions,
                                 content,
-                                ..
-                            }) = tokens.next_if(|tkn| {
-                                matches!(
-                                    tkn,
-                                    norg::NorgAST::RangeableDetachedModifier {
-                                        modifier_type: norg::RangeableDetachedModifier::Definition,
-                                        ..
-                                    }
-                                )
-                            }) {
-                                definition::render_definition(
-                                    title, extensions, content, dl_builder,
-                                );
-                            }
-                            dl_builder
-                        });
+                                &mut dl_builder,
+                            );
+                        }
+
+                        div_builder.push(dl_builder.build());
                     }
                     norg::RangeableDetachedModifier::Footnote => {
                         footnotes.push((title, extensions, content));
@@ -161,11 +159,9 @@ where
                 extensions,
                 content,
             } => {
-                div_builder.division(|db| {
-                    heading::render_heading(level, title, extensions, content, footnotes, db)
-                        .id("heading_block");
-                    db
-                });
+                div_builder.push(heading::render_heading(
+                    level, title, extensions, content, footnotes,
+                ));
             }
             //norg::NorgAST::CarryoverTag { tag_type, name, parameters, next_object } => todo!(),
             norg::NorgAST::VerbatimRangedTag {
@@ -184,20 +180,21 @@ where
             }
         };
     }
-    div_builder
+    div_builder.build()
 }
 
-pub fn parse_and_render_norg<'i, 'b>(
-    input: &'i str,
-    div_builder: &'b mut html::text_content::builders::DivisionBuilder,
-) -> miette::Result<&'b mut html::text_content::builders::DivisionBuilder> {
+pub fn parse_and_render_norg(input: &str) -> miette::Result<html::text_content::Division> {
+    let mut div_builder = html::text_content::Division::builder();
+    div_builder.class("norg_content");
+
     let tokens = norg::parse_tree(&input).map_err(|e| miette::miette!("failed to parse: {e:?}"))?;
     debug!("found tokens: {tokens:#?}");
 
     let mut footnotes = Vec::new();
 
     let mut token_iterator = tokens.into_iter().peekable();
-    render_ast(&mut token_iterator, &mut footnotes, div_builder);
+
+    div_builder.push(render_ast(&mut token_iterator, &mut footnotes));
 
     if !footnotes.is_empty() {
         div_builder.footer(|fb| {
@@ -212,7 +209,7 @@ pub fn parse_and_render_norg<'i, 'b>(
                                 .division(|divb| {
                                     foot_note_paras.into_iter().for_each(|fnote| {
                                         divb.division(|pdiv| {
-                                            render_flat_ast(&fnote, pdiv);
+                                            pdiv.push(render_flat_ast(&fnote));
                                             pdiv
                                         });
                                     });
@@ -231,24 +228,17 @@ pub fn parse_and_render_norg<'i, 'b>(
             })
         });
     }
-    Ok(div_builder)
+    Ok(div_builder.build())
 }
 
 /// this currently used only in html list and definitions items so some of the items may not work
-fn render_flat_ast<'a, 'd>(
-    ast: &'a norg::NorgASTFlat,
-    dbuilder: &'d mut html::text_content::builders::DivisionBuilder,
-) -> &'d mut html::text_content::builders::DivisionBuilder {
+fn render_flat_ast(ast: &norg::NorgASTFlat) -> html::text_content::Division {
     trace!(?ast, "rendering flat ast");
+    let mut dbuilder = html::text_content::Division::builder();
     match ast {
         norg::NorgASTFlat::Paragraph(paras) => {
             // Create a single paragraph for all content in list items
-            dbuilder.paragraph(|pb| {
-                for para in paras {
-                    paragraph::render_paragraph(para, pb);
-                }
-                pb
-            });
+            dbuilder.push(paragraph::render_paragraph(paras));
         }
         _ => {
             error!(
@@ -256,5 +246,5 @@ fn render_flat_ast<'a, 'd>(
             );
         }
     }
-    dbuilder
+    dbuilder.build()
 }
