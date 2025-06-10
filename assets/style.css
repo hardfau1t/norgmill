@@ -1,9 +1,9 @@
 /* Import fonts */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400&display=swap');
 
-/* === Gruvbox Color Palette === */
+/* === Color Variables === */
 :root {
-    /* Gruvbox Dark Background Colors */
+    /* Dark theme (default) */
     --bg-main: #282828;
     --bg-soft: #32302f;
     --bg-hard: #1d2021;
@@ -14,12 +14,10 @@
     --bg-level-5: #504945;
     --bg-level-6: #565049;
     
-    /* Gruvbox Foreground Colors */
     --fg-main: #ebdbb2;
     --fg-secondary: #d5c4a1;
     --fg-dim: #a89984;
     
-    /* Gruvbox Accent Colors */
     --red: #fb4934;
     --green: #b8bb26;
     --yellow: #fabd2f;
@@ -28,14 +26,13 @@
     --aqua: #8ec07c;
     --orange: #fe8019;
     
-    /* Layout variables */
-    --border-radius: 8px;
+    /* Layout */
     --content-width: 900px;
     --heading-size: 1.5rem;
     --indent-size: 1rem;
 }
 
-/* === Light theme === */
+/* Light theme */
 [data-theme="light"] {
     --bg-main: #fbf1c7;
     --bg-soft: #f2e5bc;
@@ -60,7 +57,7 @@
     --orange: #d65d0e;
 }
 
-/* === Auto theme based on system preference === */
+/* Auto theme based on system preference */
 @media (prefers-color-scheme: light) {
     :root:not([data-theme]) {
         --bg-main: #fbf1c7;
@@ -93,7 +90,6 @@
 }
 
 html {
-    scroll-behavior: smooth;
     font-size: 16px;
     overflow-x: hidden;
 }
@@ -105,12 +101,11 @@ body {
     line-height: 1.6;
     margin: 0;
     padding: 1rem;
-    min-height: 100vh;
     overflow-x: hidden;
     word-wrap: break-word;
 }
 
-/* === Site Header & Navigation === */
+/* === Header & Navigation === */
 .site-header {
     background-color: var(--bg-hard);
     border-bottom: 1px solid var(--bg-level-2);
@@ -130,7 +125,6 @@ body {
 }
 
 .site-title {
-    font-family: 'Inter', sans-serif;
     font-size: 1.5rem;
     font-weight: 700;
     color: var(--red);
@@ -153,7 +147,7 @@ body {
     text-decoration: none;
     font-weight: 500;
     padding: 0.5rem 1rem;
-    border-radius: var(--border-radius);
+    border-radius: 8px;
     background-color: var(--bg-level-1);
     border: 1px solid transparent;
     transition: all 0.2s ease;
@@ -166,13 +160,13 @@ body {
     border-color: var(--blue);
 }
 
-/* === Theme Toggle Button === */
+/* Theme toggle button */
 .theme-toggle {
     background: var(--bg-level-1);
     border: 1px solid transparent;
     color: var(--orange);
     padding: 0.5rem;
-    border-radius: var(--border-radius);
+    border-radius: 8px;
     cursor: pointer;
     font-size: 1.2rem;
     transition: all 0.2s ease;
@@ -186,11 +180,6 @@ body {
 .theme-toggle:hover {
     background-color: var(--bg-level-2);
     border-color: var(--orange);
-    transform: translateY(-1px);
-}
-
-.theme-toggle:active {
-    transform: translateY(0);
 }
 
 .theme-toggle .icon {
@@ -207,14 +196,13 @@ main.norg_content {
     margin: 0 auto;
     padding: 0;
     background-color: var(--bg-soft);
-    border-radius: var(--border-radius);
+    border-radius: 8px;
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
     width: 100%;
     overflow-x: hidden;
     word-wrap: break-word;
 }
 
-/* Inner norg_content div - no indentation */
 .norg_content .norg_content {
     max-width: none;
     margin: 0;
@@ -225,11 +213,11 @@ main.norg_content {
     width: 100%;
 }
 
-/* === Metadata Section === */
+/* === Metadata === */
 .metadata {
     background-color: var(--bg-level-1);
     padding: 1.5rem;
-    border-radius: var(--border-radius);
+    border-radius: 8px;
     margin-bottom: 2rem;
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.85rem;
@@ -245,7 +233,7 @@ main.norg_content {
     margin-bottom: 0;
 }
 
-/* === Typography - All headings same size === */
+/* === Typography === */
 h1, h2, h3, h4, h5, h6,
 .heading_1, .heading_2, .heading_3, .heading_4, .heading_5, .heading_6 {
     font-family: 'Inter', sans-serif;
@@ -256,7 +244,6 @@ h1, h2, h3, h4, h5, h6,
     color: var(--fg-main);
 }
 
-/* Different colors for different heading levels */
 h1, .heading_1 { color: var(--red); }
 h2, .heading_2 { color: var(--green); }
 h3, .heading_3 { color: var(--yellow); }
@@ -264,7 +251,6 @@ h4, .heading_4 { color: var(--blue); }
 h5, .heading_5 { color: var(--purple); }
 h6, .heading_6 { color: var(--aqua); }
 
-/* First heading has no top margin */
 .norg_content > .content_block > .heading_block:first-child > h1,
 .norg_content > .heading_block:first-child > h1 {
     margin-top: 0;
@@ -278,15 +264,14 @@ p {
     hyphens: auto;
 }
 
-/* === Block Structure with Left-only Indentation === */
+/* === Block Structure === */
 .heading_block {
     margin-bottom: 1rem;
 }
 
-/* Add 1em padding for first level content blocks */
 .norg_content > .content_block {
     padding: 1em;
-    border-radius: var(--border-radius);
+    border-radius: 8px;
     margin-bottom: 1rem;
     background-color: var(--bg-level-1);
     border-left: 1px solid rgba(251, 73, 52, 0.3);
@@ -294,10 +279,9 @@ p {
     word-wrap: break-word;
 }
 
-/* Keep normal padding for nested content blocks */
 .content_block {
     padding: 1rem 0 1rem 1rem;
-    border-radius: var(--border-radius);
+    border-radius: 8px;
     margin-bottom: 1rem;
     background-color: var(--bg-level-1);
     border-left: 1px solid rgba(251, 73, 52, 0.3);
@@ -305,7 +289,7 @@ p {
     word-wrap: break-word;
 }
 
-/* Nested content blocks - progressive left indentation only */
+/* Nested content blocks */
 .heading_block .content_block {
     margin-left: var(--indent-size);
     background-color: var(--bg-level-2);
@@ -332,37 +316,15 @@ p {
     border-left: 1px solid rgba(142, 192, 124, 0.25);
 }
 
-/* === Lists - Background inherits from parent content block === */
+/* === Lists === */
 ul, ol {
-    padding: 0;
-    margin-bottom: 0;
-    /* padding: 0.5rem 0 0.5rem 1rem; */
-    /* margin-bottom: 1rem; */
-    border-radius: var(--border-radius);
+    padding: 0.5rem 0 0.5rem 1rem;
+    margin-bottom: 1rem;
+    margin-top: 0;
+    border-radius: 8px;
     background-color: transparent;
 }
 
-ul ul, ol ol, ul ol, ol ul {
-    margin: 0.5rem 0;
-    padding-left: 1rem;
-    background-color: transparent;
-}
-
-ul ul ul, ol ol ol {
-    background-color: transparent;
-}
-
-ul ul ul ul, ol ol ol ol {
-    background-color: transparent;
-}
-
-ul ul ul ul ul, ol ol ol ol ol {
-    background-color: transparent;
-}
-
-ul ul ul ul ul ul, ol ol ol ol ol ol {
-    background-color: transparent;
-}
 
 li {
     margin-bottom: 0.5rem;
@@ -373,7 +335,7 @@ li:last-child {
     margin-bottom: 0;
 }
 
-/* === Code Elements === */
+/* === Code === */
 code {
     font-family: 'JetBrains Mono', monospace;
     background-color: var(--bg-level-2);
@@ -388,7 +350,7 @@ pre {
     background-color: var(--bg-level-1);
     color: var(--fg-main);
     padding: 1.5rem;
-    border-radius: var(--border-radius);
+    border-radius: 8px;
     overflow-x: auto;
     font-size: 0.9em;
     border-left: 2px solid rgba(254, 128, 25, 0.4);
@@ -411,7 +373,7 @@ blockquote {
     font-style: italic;
     color: var(--fg-secondary);
     background-color: var(--bg-level-1);
-    border-radius: var(--border-radius);
+    border-radius: 8px;
 }
 
 blockquote blockquote {
@@ -437,7 +399,7 @@ blockquote p:last-child {
 dl {
     background-color: var(--bg-level-1);
     padding: 1rem 0 1rem 1rem;
-    border-radius: var(--border-radius);
+    border-radius: 8px;
     border-left: 2px solid rgba(211, 134, 155, 0.4);
 }
 
@@ -492,7 +454,7 @@ footer li {
     margin-bottom: 1rem;
     background-color: var(--bg-level-1);
     padding: 1rem;
-    border-radius: var(--border-radius);
+    border-radius: 8px;
     border-left: 2px solid rgba(254, 128, 25, 0.4);
 }
 
@@ -644,7 +606,7 @@ footer li {
         color: black;
     }
     
-    .norg_content {
+    main.norg_content {
         box-shadow: none;
         background: white;
     }
@@ -659,16 +621,13 @@ footer li {
     }
 }
 
-/* === JavaScript for Theme Toggle === */
-/*
+/* === Theme toggle JavaScript === */
 <script>
 (function() {
-    // Get saved theme or default to system preference
     const savedTheme = localStorage.getItem('theme');
     const systemTheme = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
     const currentTheme = savedTheme || systemTheme;
     
-    // Apply theme to document
     function setTheme(theme) {
         if (theme === 'auto') {
             document.documentElement.removeAttribute('data-theme');
@@ -679,7 +638,6 @@ footer li {
         updateToggleIcon(theme);
     }
     
-    // Update toggle button icon
     function updateToggleIcon(theme) {
         const toggle = document.querySelector('.theme-toggle .icon');
         if (toggle) {
@@ -691,17 +649,14 @@ footer li {
         }
     }
     
-    // Initialize theme
     setTheme(currentTheme);
     
-    // Theme toggle functionality
     function toggleTheme() {
         const currentTheme = document.documentElement.getAttribute('data-theme');
         const newTheme = currentTheme === 'light' ? 'dark' : 'light';
         setTheme(newTheme);
     }
     
-    // Set up toggle button when DOM is ready
     document.addEventListener('DOMContentLoaded', function() {
         const toggleButton = document.querySelector('.theme-toggle');
         if (toggleButton) {
@@ -710,7 +665,6 @@ footer li {
         }
     });
     
-    // Listen for system theme changes
     window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', function(e) {
         if (!localStorage.getItem('theme')) {
             setTheme('auto');
@@ -718,4 +672,3 @@ footer li {
     });
 })();
 </script>
-*/
