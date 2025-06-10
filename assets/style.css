@@ -1,0 +1,721 @@
+/* Import fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* === Gruvbox Color Palette === */
+:root {
+    /* Gruvbox Dark Background Colors */
+    --bg-main: #282828;
+    --bg-soft: #32302f;
+    --bg-hard: #1d2021;
+    --bg-level-1: #32302f;
+    --bg-level-2: #3c3836;
+    --bg-level-3: #423d3a;
+    --bg-level-4: #49453e;
+    --bg-level-5: #504945;
+    --bg-level-6: #565049;
+    
+    /* Gruvbox Foreground Colors */
+    --fg-main: #ebdbb2;
+    --fg-secondary: #d5c4a1;
+    --fg-dim: #a89984;
+    
+    /* Gruvbox Accent Colors */
+    --red: #fb4934;
+    --green: #b8bb26;
+    --yellow: #fabd2f;
+    --blue: #83a598;
+    --purple: #d3869b;
+    --aqua: #8ec07c;
+    --orange: #fe8019;
+    
+    /* Layout variables */
+    --border-radius: 8px;
+    --content-width: 900px;
+    --heading-size: 1.5rem;
+    --indent-size: 1rem;
+}
+
+/* === Light theme === */
+[data-theme="light"] {
+    --bg-main: #fbf1c7;
+    --bg-soft: #f2e5bc;
+    --bg-hard: #f9f5d7;
+    --bg-level-1: #f2e5bc;
+    --bg-level-2: #eddfb4;
+    --bg-level-3: #e8daac;
+    --bg-level-4: #e3d5a4;
+    --bg-level-5: #ded09c;
+    --bg-level-6: #d9cb94;
+    
+    --fg-main: #3c3836;
+    --fg-secondary: #504945;
+    --fg-dim: #665c54;
+    
+    --red: #cc241d;
+    --green: #98971a;
+    --yellow: #d79921;
+    --blue: #458588;
+    --purple: #b16286;
+    --aqua: #689d6a;
+    --orange: #d65d0e;
+}
+
+/* === Auto theme based on system preference === */
+@media (prefers-color-scheme: light) {
+    :root:not([data-theme]) {
+        --bg-main: #fbf1c7;
+        --bg-soft: #f2e5bc;
+        --bg-hard: #f9f5d7;
+        --bg-level-1: #f2e5bc;
+        --bg-level-2: #eddfb4;
+        --bg-level-3: #e8daac;
+        --bg-level-4: #e3d5a4;
+        --bg-level-5: #ded09c;
+        --bg-level-6: #d9cb94;
+        
+        --fg-main: #3c3836;
+        --fg-secondary: #504945;
+        --fg-dim: #665c54;
+        
+        --red: #cc241d;
+        --green: #98971a;
+        --yellow: #d79921;
+        --blue: #458588;
+        --purple: #b16286;
+        --aqua: #689d6a;
+        --orange: #d65d0e;
+    }
+}
+
+/* === Base Styles === */
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+    font-size: 16px;
+    overflow-x: hidden;
+}
+
+body {
+    background-color: var(--bg-main);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--fg-main);
+    line-height: 1.6;
+    margin: 0;
+    padding: 1rem;
+    min-height: 100vh;
+    overflow-x: hidden;
+    word-wrap: break-word;
+}
+
+/* === Site Header & Navigation === */
+.site-header {
+    background-color: var(--bg-hard);
+    border-bottom: 1px solid var(--bg-level-2);
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.header-content {
+    max-width: var(--content-width);
+    margin: 0 auto;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.site-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--red);
+    margin: 0;
+    text-decoration: none;
+}
+
+.site-title:hover {
+    color: var(--orange);
+}
+
+.site-header nav {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.site-header nav a {
+    color: var(--blue);
+    text-decoration: none;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: var(--border-radius);
+    background-color: var(--bg-level-1);
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+}
+
+.site-header nav a:hover {
+    color: var(--aqua);
+    background-color: var(--bg-level-2);
+    border-color: var(--blue);
+}
+
+/* === Theme Toggle Button === */
+.theme-toggle {
+    background: var(--bg-level-1);
+    border: 1px solid transparent;
+    color: var(--orange);
+    padding: 0.5rem;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.5rem;
+    height: 2.5rem;
+}
+
+.theme-toggle:hover {
+    background-color: var(--bg-level-2);
+    border-color: var(--orange);
+    transform: translateY(-1px);
+}
+
+.theme-toggle:active {
+    transform: translateY(0);
+}
+
+.theme-toggle .icon {
+    transition: transform 0.2s ease;
+}
+
+.theme-toggle:hover .icon {
+    transform: rotate(180deg);
+}
+
+/* === Main Layout === */
+main.norg_content {
+    max-width: var(--content-width);
+    margin: 0 auto;
+    padding: 0;
+    background-color: var(--bg-soft);
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+    width: 100%;
+    overflow-x: hidden;
+    word-wrap: break-word;
+}
+
+/* Inner norg_content div - no indentation */
+.norg_content .norg_content {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    background-color: transparent;
+    border-radius: 0;
+    box-shadow: none;
+    width: 100%;
+}
+
+/* === Metadata Section === */
+.metadata {
+    background-color: var(--bg-level-1);
+    padding: 1.5rem;
+    border-radius: var(--border-radius);
+    margin-bottom: 2rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--fg-dim);
+    border-left: 2px solid rgba(131, 165, 152, 0.4);
+}
+
+.metadata div {
+    margin-bottom: 0.5rem;
+}
+
+.metadata div:last-child {
+    margin-bottom: 0;
+}
+
+/* === Typography - All headings same size === */
+h1, h2, h3, h4, h5, h6,
+.heading_1, .heading_2, .heading_3, .heading_4, .heading_5, .heading_6 {
+    font-family: 'Inter', sans-serif;
+    font-size: var(--heading-size);
+    font-weight: 600;
+    line-height: 1.3;
+    margin: 1.5rem 0 1rem 0;
+    color: var(--fg-main);
+}
+
+/* Different colors for different heading levels */
+h1, .heading_1 { color: var(--red); }
+h2, .heading_2 { color: var(--green); }
+h3, .heading_3 { color: var(--yellow); }
+h4, .heading_4 { color: var(--blue); }
+h5, .heading_5 { color: var(--purple); }
+h6, .heading_6 { color: var(--aqua); }
+
+/* First heading has no top margin */
+.norg_content > .content_block > .heading_block:first-child > h1,
+.norg_content > .heading_block:first-child > h1 {
+    margin-top: 0;
+}
+
+p {
+    margin-bottom: 1.2em;
+    color: var(--fg-secondary);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+}
+
+/* === Block Structure with Left-only Indentation === */
+.heading_block {
+    margin-bottom: 1rem;
+}
+
+/* Add 1em padding for first level content blocks */
+.norg_content > .content_block {
+    padding: 1em;
+    border-radius: var(--border-radius);
+    margin-bottom: 1rem;
+    background-color: var(--bg-level-1);
+    border-left: 1px solid rgba(251, 73, 52, 0.3);
+    overflow-x: hidden;
+    word-wrap: break-word;
+}
+
+/* Keep normal padding for nested content blocks */
+.content_block {
+    padding: 1rem 0 1rem 1rem;
+    border-radius: var(--border-radius);
+    margin-bottom: 1rem;
+    background-color: var(--bg-level-1);
+    border-left: 1px solid rgba(251, 73, 52, 0.3);
+    overflow-x: hidden;
+    word-wrap: break-word;
+}
+
+/* Nested content blocks - progressive left indentation only */
+.heading_block .content_block {
+    margin-left: var(--indent-size);
+    background-color: var(--bg-level-2);
+    border-left: 1px solid rgba(184, 187, 38, 0.25);
+}
+
+.heading_block .heading_block .content_block {
+    background-color: var(--bg-level-3);
+    border-left: 1px solid rgba(250, 189, 47, 0.25);
+}
+
+.heading_block .heading_block .heading_block .content_block {
+    background-color: var(--bg-level-4);
+    border-left: 1px solid rgba(131, 165, 152, 0.25);
+}
+
+.heading_block .heading_block .heading_block .heading_block .content_block {
+    background-color: var(--bg-level-5);
+    border-left: 1px solid rgba(211, 134, 155, 0.25);
+}
+
+.heading_block .heading_block .heading_block .heading_block .heading_block .content_block {
+    background-color: var(--bg-level-6);
+    border-left: 1px solid rgba(142, 192, 124, 0.25);
+}
+
+/* === Lists - Background inherits from parent content block === */
+ul, ol {
+    padding: 0;
+    margin-bottom: 0;
+    /* padding: 0.5rem 0 0.5rem 1rem; */
+    /* margin-bottom: 1rem; */
+    border-radius: var(--border-radius);
+    background-color: transparent;
+}
+
+ul ul, ol ol, ul ol, ol ul {
+    margin: 0.5rem 0;
+    padding-left: 1rem;
+    background-color: transparent;
+}
+
+ul ul ul, ol ol ol {
+    background-color: transparent;
+}
+
+ul ul ul ul, ol ol ol ol {
+    background-color: transparent;
+}
+
+ul ul ul ul ul, ol ol ol ol ol {
+    background-color: transparent;
+}
+
+ul ul ul ul ul ul, ol ol ol ol ol ol {
+    background-color: transparent;
+}
+
+li {
+    margin-bottom: 0.5rem;
+    color: var(--fg-secondary);
+}
+
+li:last-child {
+    margin-bottom: 0;
+}
+
+/* === Code Elements === */
+code {
+    font-family: 'JetBrains Mono', monospace;
+    background-color: var(--bg-level-2);
+    color: var(--orange);
+    padding: 0.2em 0.4em;
+    border-radius: 4px;
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+pre {
+    background-color: var(--bg-level-1);
+    color: var(--fg-main);
+    padding: 1.5rem;
+    border-radius: var(--border-radius);
+    overflow-x: auto;
+    font-size: 0.9em;
+    border-left: 2px solid rgba(254, 128, 25, 0.4);
+    max-width: 100%;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+pre code {
+    background: transparent;
+    padding: 0;
+    color: inherit;
+}
+
+/* === Quotes === */
+blockquote {
+    border-left: 2px solid rgba(131, 165, 152, 0.4);
+    padding: 1rem 0 1rem 1rem;
+    margin: 1rem 0;
+    font-style: italic;
+    color: var(--fg-secondary);
+    background-color: var(--bg-level-1);
+    border-radius: var(--border-radius);
+}
+
+blockquote blockquote {
+    margin-left: var(--indent-size);
+    background-color: var(--bg-level-2);
+    border-left: 2px solid rgba(184, 187, 38, 0.3);
+}
+
+blockquote blockquote blockquote {
+    background-color: var(--bg-level-3);
+    border-left: 2px solid rgba(250, 189, 47, 0.3);
+}
+
+blockquote p {
+    margin-bottom: 0.8rem;
+}
+
+blockquote p:last-child {
+    margin-bottom: 0;
+}
+
+/* === Definition Lists === */
+dl {
+    background-color: var(--bg-level-1);
+    padding: 1rem 0 1rem 1rem;
+    border-radius: var(--border-radius);
+    border-left: 2px solid rgba(211, 134, 155, 0.4);
+}
+
+dt {
+    font-weight: 600;
+    color: var(--purple);
+    margin-bottom: 0.5rem;
+}
+
+dd {
+    margin-left: 1rem;
+    margin-bottom: 1rem;
+    color: var(--fg-secondary);
+}
+
+dd:last-child {
+    margin-bottom: 0;
+}
+
+/* === Links === */
+a {
+    color: var(--blue);
+    text-decoration: none;
+    transition: color 0.2s ease;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+}
+
+a:hover {
+    color: var(--aqua);
+    text-decoration: underline;
+}
+
+a:visited {
+    color: var(--purple);
+}
+
+/* === Footer === */
+footer {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--bg-level-2);
+}
+
+footer ol {
+    background: transparent;
+    padding-left: 1rem;
+}
+
+footer li {
+    margin-bottom: 1rem;
+    background-color: var(--bg-level-1);
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    border-left: 2px solid rgba(254, 128, 25, 0.4);
+}
+
+/* === Responsive Design === */
+@media (max-width: 768px) {
+    :root {
+        --indent-size: 0.5rem;
+        --heading-size: 1.25rem;
+    }
+    
+    body {
+        padding: 0.25rem;
+        font-size: 15px;
+    }
+    
+    main.norg_content {
+        padding: 0;
+        margin: 0;
+        border-radius: 0;
+        max-width: 100%;
+    }
+    
+    .header-content {
+        padding: 1rem;
+    }
+    
+    .site-title {
+        font-size: 1.25rem;
+    }
+    
+    .site-header nav {
+        gap: 0.75rem;
+    }
+    
+    .site-header nav a {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.85rem;
+    }
+    
+    .theme-toggle {
+        min-width: 2.25rem;
+        height: 2.25rem;
+        font-size: 1.1rem;
+    }
+    
+    .metadata {
+        padding: 1rem;
+        font-size: 0.8rem;
+    }
+    
+    .norg_content > .content_block {
+        padding: 1em;
+    }
+    
+    .content_block {
+        padding: 0.75rem 0 0.75rem 0.5rem;
+    }
+    
+    ul, ol {
+        padding: 0.5rem 0 0.5rem 0.75rem;
+    }
+    
+    blockquote {
+        padding: 0.75rem 0 0.75rem 0.5rem;
+    }
+    
+    dl {
+        padding: 0.75rem 0 0.75rem 0.5rem;
+    }
+    
+    dd {
+        margin-left: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    :root {
+        --indent-size: 0.25rem;
+        --heading-size: 1.125rem;
+    }
+    
+    .header-content {
+        padding: 0.75rem;
+        flex-direction: column;
+        gap: 0.75rem;
+        text-align: center;
+    }
+    
+    .site-title {
+        font-size: 1.125rem;
+    }
+    
+    .site-header nav {
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .site-header nav a {
+        padding: 0.4rem 0.7rem;
+        font-size: 0.8rem;
+        min-width: 60px;
+    }
+    
+    .theme-toggle {
+        min-width: 2rem;
+        height: 2rem;
+        font-size: 1rem;
+    }
+    
+    .metadata {
+        font-size: 0.75rem;
+    }
+    
+    .norg_content > .content_block {
+        padding: 1em;
+    }
+    
+    .content_block {
+        padding: 0.5rem 0 0.5rem 0.25rem;
+    }
+    
+    ul, ol {
+        padding: 0.25rem 0 0.25rem 0.5rem;
+    }
+    
+    blockquote {
+        padding: 0.5rem 0 0.5rem 0.25rem;
+    }
+    
+    dl {
+        padding: 0.5rem 0 0.5rem 0.25rem;
+    }
+    
+    dd {
+        margin-left: 0.5rem;
+    }
+}
+
+/* === Utility classes === */
+.ast_tree {
+    display: none;
+}
+
+/* === Print styles === */
+@media print {
+    body {
+        background: white;
+        color: black;
+    }
+    
+    .norg_content {
+        box-shadow: none;
+        background: white;
+    }
+    
+    .content_block {
+        background: #f5f5f5 !important;
+        break-inside: avoid;
+    }
+    
+    .site-header {
+        display: none;
+    }
+}
+
+/* === JavaScript for Theme Toggle === */
+/*
+<script>
+(function() {
+    // Get saved theme or default to system preference
+    const savedTheme = localStorage.getItem('theme');
+    const systemTheme = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    const currentTheme = savedTheme || systemTheme;
+    
+    // Apply theme to document
+    function setTheme(theme) {
+        if (theme === 'auto') {
+            document.documentElement.removeAttribute('data-theme');
+        } else {
+            document.documentElement.setAttribute('data-theme', theme);
+        }
+        localStorage.setItem('theme', theme);
+        updateToggleIcon(theme);
+    }
+    
+    // Update toggle button icon
+    function updateToggleIcon(theme) {
+        const toggle = document.querySelector('.theme-toggle .icon');
+        if (toggle) {
+            if (theme === 'light') {
+                toggle.textContent = '🌙';
+            } else {
+                toggle.textContent = '☀️';
+            }
+        }
+    }
+    
+    // Initialize theme
+    setTheme(currentTheme);
+    
+    // Theme toggle functionality
+    function toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        setTheme(newTheme);
+    }
+    
+    // Set up toggle button when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        const toggleButton = document.querySelector('.theme-toggle');
+        if (toggleButton) {
+            toggleButton.addEventListener('click', toggleTheme);
+            updateToggleIcon(currentTheme);
+        }
+    });
+    
+    // Listen for system theme changes
+    window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', function(e) {
+        if (!localStorage.getItem('theme')) {
+            setTheme('auto');
+        }
+    });
+})();
+</script>
+*/
