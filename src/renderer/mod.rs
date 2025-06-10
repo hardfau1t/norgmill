@@ -187,23 +187,20 @@ where
     div_builder
 }
 
-pub fn parse_and_render_body<'i, 'b>(
+pub fn parse_and_render_norg<'i, 'b>(
     input: &'i str,
-    body_builder: &'b mut html::root::builders::BodyBuilder,
-) -> miette::Result<&'b mut html::root::builders::BodyBuilder> {
+    div_builder: &'b mut html::text_content::builders::DivisionBuilder,
+) -> miette::Result<&'b mut html::text_content::builders::DivisionBuilder> {
     let tokens = norg::parse_tree(&input).map_err(|e| miette::miette!("failed to parse: {e:?}"))?;
     debug!("found tokens: {tokens:#?}");
 
     let mut footnotes = Vec::new();
 
     let mut token_iterator = tokens.into_iter().peekable();
-    body_builder.division(|div_builder| {
-        render_ast(&mut token_iterator, &mut footnotes, div_builder);
-        div_builder
-    });
+    render_ast(&mut token_iterator, &mut footnotes, div_builder);
 
     if !footnotes.is_empty() {
-        body_builder.footer(|fb| {
+        div_builder.footer(|fb| {
             fb.ordered_list(|ol_builder| {
                 footnotes
                     .into_iter()
@@ -234,7 +231,7 @@ pub fn parse_and_render_body<'i, 'b>(
             })
         });
     }
-    Ok(body_builder)
+    Ok(div_builder)
 }
 
 /// this currently used only in html list and definitions items so some of the items may not work

@@ -22,16 +22,12 @@ struct AppState {
 #[instrument(skip(file_path))]
 async fn render_norg_file<'a>(
     file_path: std::path::PathBuf,
-) -> Result<Html<String>, http::StatusCode> {
+) -> miette::Result<(String, html::text_content::Division)> {
     trace!("rendering norg file");
     let content = tokio::fs::read_to_string(&file_path)
         .await
         .into_diagnostic()
-        .wrap_err_with(|| miette!("reading file: {file_path:?}"))
-        .map_err(|e| {
-            error!("failed to read {e}");
-            http::StatusCode::NOT_FOUND
-        })?;
+        .wrap_err_with(|| miette!("reading file: {file_path:?}"))?;
     debug!(path = %file_path.display(), "Successfully read file content");
 
     let title = file_path
@@ -39,37 +35,16 @@ async fn render_norg_file<'a>(
         .expect("norg file without stem cannot be present")
         .to_string_lossy()
         .to_string();
-    let body = tokio::task::spawn_blocking(move || {
-        let mut builder = html::root::Body::builder();
-        renderer::parse_and_render_body(&content, &mut builder)
+    let content_div = tokio::task::spawn_blocking(move || {
+        let mut builder = html::text_content::Division::builder();
+        renderer::parse_and_render_norg(&content, &mut builder)
             .expect("Couldn't parse the file")
             .build()
     })
     .await
     .expect("Couldn't generate html body");
-    let page = html::root::Html::builder().title(title).push(body).build();
-
     debug!(path = %file_path.display(), "Successfully generated HTML page");
-    Ok(Html(page.to_string()))
-}
-
-#[instrument(skip(_state))]
-async fn system_files(
-    State(_state): State<Arc<AppState>>,
-    Path(system_path): Path<std::path::PathBuf>,
-) -> Result<Html<String>, http::StatusCode> {
-    trace!("service system files: {system_path:?}");
-    // this is required because `system_path` will not contain / at the beginning
-    let mut file_path = std::path::PathBuf::from("/");
-    file_path.push(system_path);
-    debug!(full_path = %file_path.display(), "Constructed full path for system file");
-    if file_path.extension().is_some_and(|e| e == "norg") {
-        debug!("Identified as .norg file, proceeding to render.");
-        render_norg_file(file_path).await
-    } else {
-        error!("File not a .norg or not implemented, returning error.");
-        Err(http::StatusCode::NOT_IMPLEMENTED)
-    }
+    Ok((title, content_div))
 }
 
 async fn read_and_render_file(
@@ -114,8 +89,38 @@ async fn read_and_render_file(
             file_path.set_extension("norg");
         };
         debug!(path = %file_path.display(), "Constructed full path for index route");
-        render_norg_file(file_path).await
+        match render_norg_file(file_path).await {
+            Ok((title, body)) => Ok(generate_html_page(title, body)),
+            Err(e) => {
+                error!("Failed to render norg file: {e}");
+                Err(http::StatusCode::INTERNAL_SERVER_ERROR)
+            }
+        }
     }
+}
+
+fn generate_html_page(title: String, content: html::text_content::Division) -> Html<String> {
+    let navigation_buttons = html::text_content::Division::builder()
+        .class("navigation")
+        .anchor(|anchor_b| {
+            anchor_b
+                .href(constants::CURRENT_WORKSPACE_PATH)
+                .text("home")
+        })
+        .build();
+    let body = html::root::Body::builder()
+        .push(navigation_buttons.clone())
+        .division(|div_b| div_b.class("text_content").push(content))
+        .push(navigation_buttons)
+        .build();
+
+    Html(
+        html::root::Html::builder()
+            .head(|hb| hb.title(|tb| tb.text(title)))
+            .push(body)
+            .build()
+            .to_string(),
+    )
 }
 
 #[instrument]

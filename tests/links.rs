@@ -1,13 +1,13 @@
 #![recursion_limit = "512"]
-use html::root::Body;
+use html::text_content::Division;
 use norgmill::renderer; // For renderer::parse_and_render_body // For Body::builder()
 
 // Utility function to render a Norg string to a full HTML body string.
 fn test_link_rendering(norg_link_string: &str, _current_file_path: Option<&str>) -> String {
     // _current_file_path is now unused as parse_and_render_body doesn't take it directly.
     // This might affect tests requiring path context for link resolution.
-    let mut body_builder = Body::builder();
-    match renderer::parse_and_render_body(norg_link_string, &mut body_builder) {
+    let mut body_builder = Division::builder();
+    match renderer::parse_and_render_norg(norg_link_string, &mut body_builder) {
         Ok(_) => body_builder.build().to_string(),
         Err(e) => panic!("parse_and_render_body failed: {:?}", e),
     }

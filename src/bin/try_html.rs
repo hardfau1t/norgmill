@@ -1,7 +1,7 @@
 #![recursion_limit = "512"]
 
 use clap::Parser;
-use html::root::Body;
+use html::text_content::Division;
 use miette::{Context, IntoDiagnostic};
 use norgmill::renderer;
 use std::fs;
@@ -48,8 +48,8 @@ fn main() -> miette::Result<()> {
 
     debug!(bytes = norg_content.len(), "Read Norg content successfully");
 
-    let mut body_builder = Body::builder();
-    let body = renderer::parse_and_render_body(&norg_content, &mut body_builder)
+    let mut content_builder = Division::builder();
+    let content = renderer::parse_and_render_norg(&norg_content, &mut content_builder)
         .wrap_err("Failed to parse and render Norg content")?
         .build();
 
@@ -62,7 +62,7 @@ fn main() -> miette::Result<()> {
 
     let full_html_output = html::root::Html::builder()
         .title(title)
-        .push(body)
+        .body(|body_builder| body_builder.push(content))
         .build()
         .to_string();
 
