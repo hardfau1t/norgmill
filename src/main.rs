@@ -194,16 +194,23 @@ fn generate_norg_html_page(title: String, content: html::text_content::Division)
 
     Html(
         html::root::Html::builder()
-            .head(|hb| {hb.title(|tb|
-                  tb.text(title))
+            .head(|hb| {hb.title(|tb| tb.text(title))
                   .lang("en")
                   .meta(|mb| mb.charset("UTF-8"))
                   .meta(|mb| mb.name("viewport").content("width=device-width, initial-scale=1.0"))
-                  .link(|link_builder| link_builder.rel("stylesheet").href("/static/style.css")) // TODO: replace href with reading while compile time
-                  .script(|script_b| script_b.src("/static/scripts.js"))
                   .link(|lb| lb.rel("preconnect").href("https://fonts.googleapis.com"))
                   .link(|lb| lb.rel("preconnect").href("https://fonts.gstatic.com"))
-                  .link(|lb| lb.rel("stylesheet").href("https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@600;700&family=Source+Serif+Pro:wght@400;700&display=swap"))
+                  .link(|lb| lb.rel("stylesheet").href("https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@600;700&family=Source+Serif+Pro:wght@400;700&display=swap"));
+                if cfg!(debug_assertions) {
+                  hb
+                  .link(|link_builder| link_builder.rel("stylesheet").href("/static/style.css"))
+                  .script(|script_b| script_b.src("/static/scripts.js"))
+                }else {
+
+                  hb
+                      .style(|sb| sb.text(include_str!("../assets/style.css")))
+                      .script(|sb| sb.text(include_str!("../assets/scripts.js")))
+                }
             })
             .push(body)
             .build()
