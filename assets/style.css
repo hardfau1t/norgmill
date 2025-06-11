@@ -320,11 +320,15 @@ p {
 ul, ol {
     padding: 0.5rem 0 0.5rem 1rem;
     margin-bottom: 1rem;
-    margin-top: 0;
     border-radius: 8px;
     background-color: transparent;
 }
 
+ul ul, ol ol, ul ol, ol ul {
+    margin: 0.5rem 0;
+    padding-left: 1rem;
+    background-color: transparent;
+}
 
 li {
     margin-bottom: 0.5rem;
@@ -621,54 +625,3 @@ footer li {
     }
 }
 
-/* === Theme toggle JavaScript === */
-<script>
-(function() {
-    const savedTheme = localStorage.getItem('theme');
-    const systemTheme = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-    const currentTheme = savedTheme || systemTheme;
-    
-    function setTheme(theme) {
-        if (theme === 'auto') {
-            document.documentElement.removeAttribute('data-theme');
-        } else {
-            document.documentElement.setAttribute('data-theme', theme);
-        }
-        localStorage.setItem('theme', theme);
-        updateToggleIcon(theme);
-    }
-    
-    function updateToggleIcon(theme) {
-        const toggle = document.querySelector('.theme-toggle .icon');
-        if (toggle) {
-            if (theme === 'light') {
-                toggle.textContent = '🌙';
-            } else {
-                toggle.textContent = '☀️';
-            }
-        }
-    }
-    
-    setTheme(currentTheme);
-    
-    function toggleTheme() {
-        const currentTheme = document.documentElement.getAttribute('data-theme');
-        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-        setTheme(newTheme);
-    }
-    
-    document.addEventListener('DOMContentLoaded', function() {
-        const toggleButton = document.querySelector('.theme-toggle');
-        if (toggleButton) {
-            toggleButton.addEventListener('click', toggleTheme);
-            updateToggleIcon(currentTheme);
-        }
-    });
-    
-    window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', function(e) {
-        if (!localStorage.getItem('theme')) {
-            setTheme('auto');
-        }
-    });
-})();
-</script>

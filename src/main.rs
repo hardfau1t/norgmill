@@ -114,6 +114,7 @@ fn generate_html_page(title: String, content: html::text_content::Division) -> H
                         .anchor(|anchor_b| anchor_b.href("#").text("Up"))
                         .anchor(|anchor_b| anchor_b.href("#").text("Next"))
                         .anchor(|anchor_b| anchor_b.href("#").text("Prev"))
+                        .button(|button_b| button_b.class("theme-toggle").aria_label("Toggel dark/light mode").span(|span_b| span_b.class("icon").text("☀️")))
                 })
         })
         .build();
@@ -134,6 +135,7 @@ fn generate_html_page(title: String, content: html::text_content::Division) -> H
                   .meta(|mb| mb.charset("UTF-8"))
                   .meta(|mb| mb.name("viewport").content("width=device-width, initial-scale=1.0"))
                   .link(|link_builder| link_builder.rel("stylesheet").href("/static/style.css")) // TODO: replace href with reading while compile time
+                  .script(|script_b| script_b.src("/static/scripts.js"))
                   .link(|lb| lb.rel("preconnect").href("https://fonts.googleapis.com"))
                   .link(|lb| lb.rel("preconnect").href("https://fonts.gstatic.com"))
                   .link(|lb| lb.rel("stylesheet").href("https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@600;700&family=Source+Serif+Pro:wght@400;700&display=swap"))
