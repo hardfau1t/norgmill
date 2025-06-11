@@ -148,7 +148,7 @@ async fn read_and_render_file(
     // if the extension is not .norg then set it and load the norg file
     debug!(path = %file_path.display(), "Constructed full path for index route");
     match render_norg_file(file_path).await {
-        Ok((title, body)) => Ok(generate_html_page(title, body)),
+        Ok((title, body)) => Ok(generate_norg_html_page(title, body)),
         Err(e) => {
             error!("Failed to render norg file: {e}");
             Err(http::StatusCode::INTERNAL_SERVER_ERROR)
@@ -156,7 +156,7 @@ async fn read_and_render_file(
     }
 }
 
-fn generate_html_page(title: String, content: html::text_content::Division) -> Html<String> {
+fn generate_norg_html_page(title: String, content: html::text_content::Division) -> Html<String> {
     let navigation_buttons = html::content::Header::builder()
         .class("site-header")
         .division(|div_b| {
@@ -173,6 +173,7 @@ fn generate_html_page(title: String, content: html::text_content::Division) -> H
                         .anchor(|anchor_b| anchor_b.href("#").text("Up"))
                         .anchor(|anchor_b| anchor_b.href("#").text("Next"))
                         .anchor(|anchor_b| anchor_b.href("#").text("Prev"))
+                        .anchor(|anchor_b| anchor_b.href("?raw=1").text("Raw"))
                         .button(|button_b| {
                             button_b
                                 .class("theme-toggle")
