@@ -1,5 +1,5 @@
 #![recursion_limit = "512"]
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, sync::Arc, time::SystemTime};
 
 use axum::{
     extract::{Path, Query, State},
@@ -11,17 +11,71 @@ use dotenv::dotenv;
 use miette::{miette, Context, IntoDiagnostic};
 use norgmill::{constants, renderer};
 use tokio::net::TcpListener;
-use tracing::{debug, error, info, instrument, level_filters::LevelFilter, trace};
+use tracing::{debug, error, info, instrument, level_filters::LevelFilter, trace, warn};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+
+/// parsed html content, if the file is already parsed and no new change is found then serve it immediately
+#[derive(Debug, Clone)]
+struct ParsedFile {
+    content: String,
+    last_modified_time: std::time::SystemTime,
+}
 
 #[derive(Debug, Clone)]
 struct AppState {
     root_dir: std::path::PathBuf,
+    parsed_files: dashmap::DashMap<std::path::PathBuf, ParsedFile>,
+}
+
+impl AppState {
+    fn insert_cache_file(&self, file_path: std::path::PathBuf, content: String) {
+        info!(?file_path, "caching rendered file");
+        let new_entry = ParsedFile {
+            content,
+            last_modified_time: SystemTime::now(),
+        };
+        self.parsed_files.insert(file_path, new_entry);
+    }
+
+    async fn get_cached_file(&self, file_path: &std::path::PathBuf) -> Option<String> {
+        trace!(?file_path, "checking for cached rendered file");
+        let parsed_file = self.parsed_files.get(file_path);
+        let metadata = match tokio::fs::metadata(file_path).await {
+            Ok(d) => d,
+            Err(e) => {
+                warn!(
+                    error = ?e,
+                    "Couldn't get the metadata of the file, skipping cache checking"
+                );
+                return None;
+            }
+        };
+        let last_modified_time = metadata.modified().ok()?;
+        parsed_file
+            .filter(|parsed_file| last_modified_time < parsed_file.last_modified_time)
+            .map(|parsed_entry| parsed_entry.content.clone())
+    }
+
+    async fn get_or_insert_cached_file(
+        &self,
+        file_path: &mut std::path::PathBuf,
+    ) -> Result<Html<String>, http::StatusCode> {
+        update_extension(file_path);
+        if let Some(s) = self.get_cached_file(&file_path).await {
+            info!(?file_path, "returning cached file");
+            Ok(Html(s))
+        } else {
+            info!(?file_path, "rendering fresh copy");
+            let rendered_file = read_and_render_file(&file_path).await?;
+            self.insert_cache_file(file_path.clone(), rendered_file.0.clone());
+            Ok(rendered_file)
+        }
+    }
 }
 
 #[instrument(skip(file_path))]
 async fn render_norg_file<'a>(
-    file_path: std::path::PathBuf,
+    file_path: &std::path::PathBuf,
 ) -> miette::Result<(String, html::text_content::Division)> {
     trace!("rendering norg file");
     let content = tokio::fs::read_to_string(&file_path)
@@ -45,54 +99,59 @@ async fn render_norg_file<'a>(
     Ok((title, content_div))
 }
 
-async fn read_and_render_file(
-    qparams: HashMap<String, String>,
-    mut file_path: std::path::PathBuf,
-) -> Result<Html<String>, http::StatusCode> {
-    if qparams
+fn should_it_render_raw(qparams: HashMap<String, String>) -> bool {
+    qparams
         .get(constants::ARG_RAW)
         .is_some_and(|val| constants::ARG_RAW_POSSIBLE_VALS.contains(&val.to_lowercase().as_str()))
-    {
-        let content = match tokio::fs::read(&file_path).await {
-            Ok(v) => v,
-            Err(e) => {
-                error!("Couldn't load raw file {file_path:?} : {e}");
-                return Err(http::StatusCode::INTERNAL_SERVER_ERROR);
-            }
-        };
-        match String::from_utf8(content) {
-            Ok(raw_string) => {
-                let page = html::root::Html::builder()
-                    .body(|body_builder| {
-                        body_builder
-                            .division(|div_builder| {
-                                div_builder
-                                    .preformatted_text(|text_builder| text_builder.text(raw_string))
-                            })
-                            .class("raw_div")
-                    })
-                    .build()
-                    .to_string();
-                Ok(Html(page))
-            }
-            Err(e) => {
-                error!("Possible raw file, raw binary files are not yet supported: {e}");
-                Err(http::StatusCode::INTERNAL_SERVER_ERROR)
-            }
+}
+
+fn update_extension(file_path: &mut std::path::PathBuf) {
+    if !file_path.extension().is_some_and(|ext| ext == "norg") {
+        debug!(original_path=?file_path,"setting .norg extension");
+        file_path.set_extension("norg");
+    };
+}
+
+async fn read_raw_file(file_path: &std::path::PathBuf) -> Result<Html<String>, http::StatusCode> {
+    let content = match tokio::fs::read(&file_path).await {
+        Ok(v) => v,
+        Err(e) => {
+            error!("Couldn't load raw file {file_path:?} : {e}");
+            return Err(http::StatusCode::INTERNAL_SERVER_ERROR);
         }
-    } else {
-        // if the extension is not .norg then set it and load the norg file
-        if !file_path.extension().is_some_and(|ext| ext == "norg") {
-            debug!(original_path=?file_path,"setting .norg extension");
-            file_path.set_extension("norg");
-        };
-        debug!(path = %file_path.display(), "Constructed full path for index route");
-        match render_norg_file(file_path).await {
-            Ok((title, body)) => Ok(generate_html_page(title, body)),
-            Err(e) => {
-                error!("Failed to render norg file: {e}");
-                Err(http::StatusCode::INTERNAL_SERVER_ERROR)
-            }
+    };
+    match String::from_utf8(content) {
+        Ok(raw_string) => {
+            let page = html::root::Html::builder()
+                .body(|body_builder| {
+                    body_builder
+                        .division(|div_builder| {
+                            div_builder
+                                .preformatted_text(|text_builder| text_builder.text(raw_string))
+                        })
+                        .class("raw_div")
+                })
+                .build()
+                .to_string();
+            Ok(Html(page))
+        }
+        Err(e) => {
+            error!("Possible raw file, raw binary files are not yet supported: {e}");
+            Err(http::StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+async fn read_and_render_file(
+    file_path: &std::path::PathBuf,
+) -> Result<Html<String>, http::StatusCode> {
+    // if the extension is not .norg then set it and load the norg file
+    debug!(path = %file_path.display(), "Constructed full path for index route");
+    match render_norg_file(file_path).await {
+        Ok((title, body)) => Ok(generate_html_page(title, body)),
+        Err(e) => {
+            error!("Failed to render norg file: {e}");
+            Err(http::StatusCode::INTERNAL_SERVER_ERROR)
         }
     }
 }
@@ -114,7 +173,12 @@ fn generate_html_page(title: String, content: html::text_content::Division) -> H
                         .anchor(|anchor_b| anchor_b.href("#").text("Up"))
                         .anchor(|anchor_b| anchor_b.href("#").text("Next"))
                         .anchor(|anchor_b| anchor_b.href("#").text("Prev"))
-                        .button(|button_b| button_b.class("theme-toggle").aria_label("Toggel dark/light mode").span(|span_b| span_b.class("icon").text("☀️")))
+                        .button(|button_b| {
+                            button_b
+                                .class("theme-toggle")
+                                .aria_label("Toggel dark/light mode")
+                                .span(|span_b| span_b.class("icon").text("☀️"))
+                        })
                 })
         })
         .build();
@@ -148,6 +212,7 @@ fn generate_html_page(title: String, content: html::text_content::Division) -> H
 
 #[instrument]
 async fn render_home_file(
+    State(state): State<Arc<AppState>>,
     Query(qparams): Query<HashMap<String, String>>,
     Path(norg_file_path): Path<std::path::PathBuf>,
 ) -> Result<Html<String>, http::StatusCode> {
@@ -158,18 +223,27 @@ async fn render_home_file(
     };
     let mut file_path = std::path::PathBuf::from(home_path);
     file_path.push(&norg_file_path);
-    read_and_render_file(qparams, file_path).await
+    if should_it_render_raw(qparams) {
+        read_raw_file(&file_path).await
+    } else {
+        state.get_or_insert_cached_file(&mut file_path).await
+    }
 }
 
 #[instrument]
 async fn render_root_system_file(
+    State(state): State<Arc<AppState>>,
     Path(norg_file_path): Path<std::path::PathBuf>,
     Query(qparams): Query<HashMap<String, String>>,
 ) -> Result<Html<String>, http::StatusCode> {
     trace!("rendering from system files");
     let mut file_path = std::path::PathBuf::from("/");
     file_path.push(&norg_file_path);
-    read_and_render_file(qparams, file_path).await
+    if should_it_render_raw(qparams) {
+        read_raw_file(&file_path).await
+    } else {
+        state.get_or_insert_cached_file(&mut file_path).await
+    }
 }
 
 #[instrument(skip(state))]
@@ -181,7 +255,12 @@ async fn render_current_workspace_file(
     trace!("rendering index file");
     let mut file_path = state.root_dir.clone();
     file_path.push(&norg_file_path);
-    read_and_render_file(qparams, file_path).await
+    if should_it_render_raw(qparams) {
+        read_raw_file(&file_path).await
+    } else {
+        update_extension(&mut file_path);
+        state.get_or_insert_cached_file(&mut file_path).await
+    }
 }
 
 #[derive(Debug, Clone, Subcommand)]
@@ -232,7 +311,10 @@ async fn serve(root_dir: std::path::PathBuf) -> miette::Result<()> {
             tower_http::services::ServeDir::new("/"),
         )
         .layer(tower_http::trace::TraceLayer::new_for_http())
-        .with_state(std::sync::Arc::new(AppState { root_dir }));
+        .with_state(std::sync::Arc::new(AppState {
+            root_dir,
+            parsed_files: dashmap::DashMap::new(),
+        }));
 
     let listener = TcpListener::bind("0.0.0.0:8080")
         .await
