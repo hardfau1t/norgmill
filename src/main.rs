@@ -316,7 +316,12 @@ async fn serve(root_dir: std::path::PathBuf) -> miette::Result<()> {
         )
         .route(
             "/favicon.svg",
-            routing::get(|| async { ([(axum::http::header::CONTENT_TYPE, "image/svg+xml")], include_str!("../assets/neorg.svg")) }),
+            routing::get(|| async {
+                (
+                    [(axum::http::header::CONTENT_TYPE, "image/svg+xml")],
+                    include_str!("../assets/neorg.svg"),
+                )
+            }),
         )
         .nest_service("/static", tower_http::services::ServeDir::new("assets"))
         .nest_service(
