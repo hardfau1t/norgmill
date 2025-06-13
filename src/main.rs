@@ -200,6 +200,7 @@ fn generate_norg_html_page(title: String, content: html::text_content::Division)
                   .meta(|mb| mb.name("viewport").content("width=device-width, initial-scale=1.0"))
                   .link(|lb| lb.rel("preconnect").href("https://fonts.googleapis.com"))
                   .link(|lb| lb.rel("preconnect").href("https://fonts.gstatic.com"))
+                  .link(|lb| lb.rel("icon").href("/favicon.svg").type_("image/svg+xml"))
                   .link(|lb| lb.rel("stylesheet").href("https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@600;700&family=Source+Serif+Pro:wght@400;700&display=swap"));
                 if cfg!(debug_assertions) {
                   hb
@@ -312,6 +313,10 @@ async fn serve(root_dir: std::path::PathBuf) -> miette::Result<()> {
         .route(
             constants::paths::SYSTEM_FILES,
             routing::get(render_root_system_file),
+        )
+        .route(
+            "/favicon.svg",
+            routing::get(|| async { ([(axum::http::header::CONTENT_TYPE, "image/svg+xml")], include_str!("../assets/neorg.svg")) }),
         )
         .nest_service("/static", tower_http::services::ServeDir::new("assets"))
         .nest_service(
