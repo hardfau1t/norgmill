@@ -251,10 +251,6 @@ h4, .heading_4 { color: var(--blue); }
 h5, .heading_5 { color: var(--purple); }
 h6, .heading_6 { color: var(--aqua); }
 
-.norg_content > .content_block > .heading_block:first-child > h1,
-.norg_content > .heading_block:first-child > h1 {
-    margin-top: 0;
-}
 
 p {
     margin-bottom: 1.2em;
@@ -269,20 +265,12 @@ p {
     margin-bottom: 1rem;
 }
 
-.norg_content > .content_block {
-    padding: 1em;
-    border-radius: 8px;
-    margin-bottom: 1rem;
-    background-color: var(--bg-level-1);
-    border-left: 1px solid rgba(251, 73, 52, 0.3);
-    overflow-x: hidden;
-    word-wrap: break-word;
-}
 
 .content_block {
-    padding: 1rem 0 1rem 1rem;
+    padding: 0rem 0rem 0rem 1rem;
     border-radius: 8px;
-    margin-bottom: 1rem;
+    margin-bottom: 0;
+    margin-top: 1rem;
     background-color: var(--bg-level-1);
     border-left: 1px solid rgba(251, 73, 52, 0.3);
     overflow-x: hidden;
