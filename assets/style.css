@@ -347,6 +347,123 @@ li:last-child {
     margin-bottom: 0;
 }
 
+
+.task-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.task-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.task-item:hover {
+    background-color: var(--bg0);
+}
+
+/* Custom status indicator styling */
+.status-indicator {
+    display: inline-block;
+    width: 1.5rem; /* Sufficient width for characters */
+    text-align: center;
+    flex-shrink: 0;
+    margin-right: 0.75rem;
+    font-weight: 500;
+    color: var(--gray); /* Gruvbox gray for default undone */
+}
+
+/* Pseudo-element to display status characters */
+.status-indicator::before {
+    content: '( )'; /* Default for undone */
+    color: var(--gray); /* Gruvbox gray */
+}
+
+.task-text {
+    flex-grow: 1;
+    font-weight: 500;
+    line-height: 1.5;
+    color: var(--fg); /* Gruvbox foreground text */
+}
+
+/* --- Status Specific Styling --- */
+
+/* Done Task */
+.task-item[data-status="done"] .status-indicator::before {
+    content: "(x)";
+    color: var(--light-green);
+}
+.task-item[data-status="done"] .task-text {
+    text-decoration: line-through;
+    color: var(--gray);
+}
+
+/* Needs Clarification */
+.task-item[data-status="needs-clarification"] .status-indicator::before {
+    content: "(?)";
+    color: var(--light-orange);
+}
+
+/* Paused/On Hold */
+.task-item[data-status="paused"] .status-indicator::before {
+    content: "(=)";
+    color: var(--faded-gray);
+}
+.task-item[data-status="paused"] .task-text {
+    font-style: italic;
+    color: var(--faded-gray);
+}
+
+/* Urgent */
+.task-item[data-status="urgent"] .status-indicator::before {
+    content: "(!)";
+    color: var(--light-red);
+    font-weight: 700;
+}
+.task-item[data-status="urgent"] .task-text {
+    font-weight: 600;
+    color: var(--light-red);
+}
+
+/* Recurring */
+.task-item[data-status="recurring"] .status-indicator::before {
+    content: "(+)";
+    color: var(--light-purple);
+}
+
+/* Recurring with Timestamp */
+.task-item[data-status="recurring-timestamp"] .status-indicator::before {
+    content: "(+ )"; /* Added space to differentiate visually if needed */
+    color: var(--light-blue);
+}
+
+/* In Progress/Pending */
+.task-item[data-status="pending"] .status-indicator::before {
+    content: "(-)";
+    color: var(--light-blue);
+}
+/* In Progress/Pending */
+.task-item[data-status="in-progress"] .status-indicator::before {
+    content: "(-)";
+    color: var(--light-blue);
+}
+
+/* Canceled */
+.task-item[data-status="canceled"] .status-indicator::before {
+    content: "(_)";
+    color: var(--faded-gray);
+}
+.task-item[data-status="canceled"] .task-text {
+    text-decoration: line-through;
+    color: var(--faded-gray);
+    font-style: italic;
+}
+
 /* === Code === */
 code {
     font-family: 'JetBrains Mono', monospace;

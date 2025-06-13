@@ -24,6 +24,7 @@ pub fn render_paragraph_segment<'b>(
         }
         norg::ParagraphSegment::Token(norg::ParagraphSegmentToken::Special(chr))
         | norg::ParagraphSegment::Token(norg::ParagraphSegmentToken::Escape(chr)) => {
+            // TODO: this is not correct, norg special characters are not special for html
             builder.text(
                 chr.to_string()
                     .replace('&', "&amp;")
