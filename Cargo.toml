@@ -18,3 +18,6 @@ tokio = { version = "1.40.0", features = ["full"] }
 tower-http = { version = "0.5.2", features = ["catch-panic", "fs", "metrics", "set-header", "trace"] }
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["tracing", "chrono", "env-filter", "json", "serde", "serde_json"] }
+
+[dev-dependencies]
+test-log = { version = "0.2.18", features = ["trace"] }

@@ -229,6 +229,7 @@ pub fn parse_and_render_norg(input: &str) -> miette::Result<String> {
             .wrap_err("Couldn't add foooter")?;
         output.push_str("</ol></footer>")
     }
+    debug!(output, "rendered output");
     Ok(output)
 }
 
