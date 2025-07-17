@@ -74,7 +74,7 @@ pub fn render_attached(
             trace!("rendering commented text");
             write!(
                 output,
-                "<span class=\"comment\">{}</span>",
+                "<!-- {} -->",
                 segments_collector
             )?;
         }
