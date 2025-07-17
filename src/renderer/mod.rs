@@ -188,7 +188,7 @@ where
 }
 
 pub fn parse_and_render_norg(input: &str) -> miette::Result<String> {
-    let tokens = norg::parse_tree(&input).map_err(|e| miette::miette!("failed to parse: {e:?}"))?;
+    let tokens = norg::parse_tree(input).map_err(|e| miette::miette!("failed to parse: {e:?}"))?;
     debug!("found tokens: {tokens:#?}");
 
     let mut footnotes = Vec::new();
@@ -207,16 +207,14 @@ pub fn parse_and_render_norg(input: &str) -> miette::Result<String> {
         output.push_str("<footer><ol>");
         footnotes
             .into_iter()
-            .map(|(title, extensions, foot_note_paras)| {
+            .try_for_each(|(title, extensions, foot_note_paras)| {
                 if !extensions.is_empty() {
                     warn!(?extensions, "extensions are not yet supported for footer");
                 }
                 let title_string = paragraph::render_segments(&title)?;
                 output.push_str(&format!("<li id=\"{}_footnote\">", title_string));
                 foot_note_paras
-                    .into_iter()
-                    .map(|fnote| render_flat_ast(&fnote, &mut output))
-                    .collect::<std::fmt::Result>()?;
+                    .into_iter().try_for_each(|fnote| render_flat_ast(&fnote, &mut output))?;
                 // TODO: create a backref for each footnote
                 let backref_tag = format!("#{}_footnote_backref", title_string);
                 output.push_str(&format!(
@@ -224,9 +222,8 @@ pub fn parse_and_render_norg(input: &str) -> miette::Result<String> {
                     backref_tag, backref_tag
                 ));
                 output.push_str("</li>");
-                Ok(())
+                std::fmt::Result::Ok(())
             })
-            .collect::<std::fmt::Result>()
             .into_diagnostic()
             .wrap_err("Couldn't add foooter")?;
         output.push_str("</ol></footer>")

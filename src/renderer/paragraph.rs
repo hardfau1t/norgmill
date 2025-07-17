@@ -64,7 +64,7 @@ pub fn render_segment(para: &norg::ParagraphSegment, output: &mut String)->std::
             let mut rendered_code = String::with_capacity(tokens.len());
             for token in tokens {
                 match token {
-                    norg::ParagraphSegmentToken::Text(text) => rendered_code.push_str(&text),
+                    norg::ParagraphSegmentToken::Text(text) => rendered_code.push_str(text),
                     norg::ParagraphSegmentToken::Whitespace => rendered_code.push(' '),
                     norg::ParagraphSegmentToken::Special(c) => rendered_code.push(*c),
                     norg::ParagraphSegmentToken::Escape(c) => rendered_code.push(*c),

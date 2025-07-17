@@ -79,7 +79,7 @@ pub fn render_list_element(
     // Start list item with extensions as attributes
     write!(output, "<li class={kind}_l{level}")?;
     let add_todo = apply_extensions(extensions, output)?;
-    output.push_str(">");
+    output.push('>');
 
     // Add status indicator span for todo items
     if add_todo {

@@ -61,12 +61,12 @@ impl AppState {
         file_path: &mut std::path::PathBuf,
     ) -> Result<Html<String>, http::StatusCode> {
         update_extension(file_path);
-        if let Some(s) = self.get_cached_file(&file_path).await {
+        if let Some(s) = self.get_cached_file(file_path).await {
             info!(?file_path, "returning cached file");
             Ok(Html(s))
         } else {
             info!(?file_path, "rendering fresh copy");
-            let rendered_file = read_and_render_file(&file_path).await?;
+            let rendered_file = read_and_render_file(file_path).await?;
             self.insert_cache_file(file_path.clone(), rendered_file.0.clone());
             Ok(rendered_file)
         }
@@ -104,7 +104,7 @@ fn should_it_render_raw(qparams: HashMap<String, String>) -> bool {
 }
 
 fn update_extension(file_path: &mut std::path::PathBuf) {
-    if !file_path.extension().is_some_and(|ext| ext == "norg") {
+    if file_path.extension().is_none_or(|ext| ext != "norg") {
         debug!(original_path=?file_path,"setting .norg extension");
         file_path.set_extension("norg");
     };
