@@ -14,10 +14,10 @@ pub fn render_attached(
     output: &mut String,
 ) -> std::fmt::Result {
     // render segments first
-    let segments_collector = String::new();
+    let mut segments_collector = String::new();
     content
         .iter()
-        .try_for_each(|seg| paragraph::render_segment(seg, output))?;
+        .try_for_each(|seg| paragraph::render_segment(seg, &mut segments_collector))?;
 
     // sanitize the content before writing to output
     let sanitized_content = crate::html::sanitize_html(&segments_collector);
