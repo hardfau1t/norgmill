@@ -43,9 +43,7 @@ pub fn render_segment(para: &norg::ParagraphSegment, output: &mut String) -> std
             modifier_type,
             content,
         } => {
-            write!(output, "<span>")?;
             basic::render_attached(*modifier_type, content, output)?;
-            write!(output, "</span>")?;
         }
         //ParagraphSegment::AttachedModifierOpener(_) => todo!(),
         //ParagraphSegment::AttachedModifierOpenerFail(_) => todo!(),
