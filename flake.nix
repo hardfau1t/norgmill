@@ -20,6 +20,7 @@
         packages = with pkgs; [
           prettier
           nushell
+          gdb
         ];
         shellHook = ''exec nu'';
       };
