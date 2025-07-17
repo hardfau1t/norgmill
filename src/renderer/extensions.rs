@@ -1,49 +1,47 @@
 //! module which does rendering of extensions like todo etc
+use std::fmt::Write;
 use tracing::{debug, instrument, trace, warn};
 
-#[instrument(skip(spb))]
-pub fn apply_extension(
-    extension: norg::DetachedModifierExtension,
-    spb: &mut html::inline_text::builders::SpanBuilder,
-) -> &mut html::inline_text::builders::SpanBuilder {
+#[instrument(skip(output))]
+pub fn apply_extension(extension: norg::DetachedModifierExtension, output: &mut String) {
     match extension {
         norg::DetachedModifierExtension::Todo(todo_status) => {
             trace!("applying todo extension");
             match todo_status {
                 norg::TodoStatus::Undone => {
                     debug!("Rendering TodoStatus: Undone");
-                    spb.class("status undone").text("");
+                    write!(output, "<span class=\"status undone\"></span>");
                 }
                 norg::TodoStatus::Done => {
                     debug!("Rendering TodoStatus: Done");
-                    spb.class("status done").text("");
+                    write!(output, "<span class=\"status done\"></span>");
                 }
                 norg::TodoStatus::NeedsClarification => {
                     debug!("Rendering TodoStatus: NeedsClarification");
-                    spb.class("status question").text("");
+                    write!(output, "<span class=\"status question\"></span>");
                 }
                 norg::TodoStatus::Paused => {
                     debug!("Rendering TodoStatus: Paused");
-                    spb.class("status paused").text("");
+                    write!(output, "<span class=\"status paused\"></span>");
                 }
                 norg::TodoStatus::Urgent => {
                     debug!("Rendering TodoStatus: Urgent");
-                    spb.class("status urgent").text("󰗖");
+                    write!(output, "<span class=\"status urgent\">󰗖</span>");
                 }
                 norg::TodoStatus::Recurring(date) => {
                     debug!(?date, "Rendering TodoStatus: Recurring");
-                    spb.class("status recurring").text("⟳");
+                    write!(output, "<span class=\"status recurring\">⟳</span>");
                     if let Some(date) = date {
-                        spb.span(|sspb| sspb.class("todo-date").text(date));
+                        write!(output, "<span class=\"todo-date\">{date}</span>");
                     }
                 }
                 norg::TodoStatus::Pending => {
                     debug!("Rendering TodoStatus: Pending");
-                    spb.class("status pending").text("");
+                    write!(output, "<span class=\"status pending\"></span>");
                 }
                 norg::TodoStatus::Canceled => {
                     debug!("Rendering TodoStatus: Canceled");
-                    spb.class("status canceled").text("󰚃");
+                    write!(output, "<span class=\"status canceled\">󰚃</span>");
                 }
             }
         }
@@ -51,5 +49,4 @@ pub fn apply_extension(
             warn!("This extensions is not yet supported")
         }
     };
-    spb
 }

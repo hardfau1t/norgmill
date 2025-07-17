@@ -537,21 +537,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "html"
-version = "0.6.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "944d7db81871c611549302f3014418fedbcfbc46902f97e6a1c4f53e785903d2"
-dependencies = [
- "html-sys",
-]
-
-[[package]]
-name = "html-sys"
-version = "0.4.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "13eca55667a5657dd1b86db77c5fe2d1810e3f9413e9555a2c4c461733dd2573"
-
-[[package]]
 name = "http"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -839,7 +824,6 @@ dependencies = [
  "const_format",
  "dashmap",
  "dotenv",
- "html",
  "http",
  "miette",
  "rust-norg",

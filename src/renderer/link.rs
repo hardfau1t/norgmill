@@ -1,15 +1,16 @@
 //! this module handles rendering of links
 
 use crate::{constants, renderer::paragraph};
+use std::fmt::Write;
 use tracing::{debug, error, instrument, trace, warn};
 
-#[instrument(skip(para_builder, description_segments))]
-pub fn render_link<'t, 'p>(
+#[instrument(skip(output, description_segments))]
+pub fn render_link(
     file_path: Option<&str>,
-    targets: &'t [norg::LinkTarget],
-    description_segments: Option<&'t [norg::ParagraphSegment]>,
-    para_builder: &'p mut html::text_content::builders::ParagraphBuilder,
-) -> &'p mut html::text_content::builders::ParagraphBuilder {
+    targets: &[norg::LinkTarget],
+    description_segments: Option<&[norg::ParagraphSegment]>,
+    output: &mut String,
+) {
     trace!("rendering link");
     let norg_file_path = file_path
         .map(|norg_path| {
@@ -73,7 +74,7 @@ pub fn render_link<'t, 'p>(
                 norg::LinkTarget::Heading { level, title } => {
                     let link = format!(
                         "#{}_h{}",
-                        paragraph::render_paragraph_to_string(title).replace(' ', "_"),
+                        paragraph::render_segments(title).replace(' ', "_"),
                         level
                     );
                     Some(link)
@@ -84,11 +85,11 @@ pub fn render_link<'t, 'p>(
                 }
                 norg::LinkTarget::Footnote(title) => Some(format!(
                     "#{}_f",
-                    paragraph::render_paragraph_to_string(title).replace(' ', "_")
+                    paragraph::render_segments(title).replace(' ', "_")
                 )),
                 norg::LinkTarget::Definition(title) => Some(format!(
                     "#{}_d",
-                    paragraph::render_paragraph_to_string(title).replace(' ', "_")
+                    paragraph::render_segments(title).replace(' ', "_")
                 )),
                 norg::LinkTarget::Wiki(title) => {
                     error!(target = ?title, "wiki links are not yet supported");
@@ -150,9 +151,9 @@ pub fn render_link<'t, 'p>(
     };
 
     let title = description_segments
-        .map(paragraph::render_paragraph_to_string)
+        .map(paragraph::render_segments)
         .unwrap_or_else(|| href.clone());
-    para_builder.anchor(|ab| ab.href(href).text(title))
+    write!(output, "<a href={href}>{title}</a>");
 }
 
 // TODO: Create a function to generate fragment tags, that will be used to create anchor tags and link to that tag

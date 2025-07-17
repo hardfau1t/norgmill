@@ -1,34 +1,42 @@
 use super::paragraph;
+use std::fmt::Write;
 use tracing::{debug, instrument, trace, warn};
 
-#[instrument(skip(extensions, content, dl_builder))]
-pub fn render_definition<'n, 'd>(
+#[instrument(skip(extensions, content, output))]
+pub fn render_definition(
     title: Vec<norg::ParagraphSegment>,
     extensions: Vec<norg::DetachedModifierExtension>,
     content: Vec<norg::NorgASTFlat>,
-    dl_builder: &'d mut html::text_content::builders::DescriptionListBuilder,
-) -> &'d mut html::text_content::builders::DescriptionListBuilder {
+    output: &mut String,
+) {
     // FIX: this renders headings in separate lines for separate words
     trace!("rendering description list");
     if !extensions.is_empty() {
         warn!(extensions=?extensions, "extensions are not supported for definition" );
     }
 
-    dl_builder.description_term(|dt_builder| {
-        debug!(
-            num_title_segments = title.len(),
-            "Rendering definition term"
-        );
-        dt_builder.push(paragraph::render_paragraph_to_string(&title))
-    });
+    write!(output, "<dt>");
+    debug!(
+        num_title_segments = title.len(),
+        "Rendering definition term"
+    );
+    for segment in &title {
+        paragraph::render_segment(segment, output);
+    }
+    write!(output, "</dt>");
 
-    dl_builder.description_details(|dd_builder| {
-        content.into_iter().for_each(|cont_ast| {
-            dd_builder.push(super::render_flat_ast(&cont_ast));
-        });
-        dd_builder
-    });
+    write!(output, "<dd>");
+    for cont_ast in content {
+        match cont_ast {
+            norg::NorgASTFlat::Paragraph(paras) => paras
+                .iter()
+                .for_each(|seg| paragraph::render_segment(seg, output)),
+            _ => {
+                warn!(?cont_ast, "Unsupported token found inside definition");
+            }
+        }
+    }
+    write!(output, "</dd>");
 
     debug!("Finished rendering definition term and details");
-    dl_builder
 }

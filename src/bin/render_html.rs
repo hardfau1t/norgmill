@@ -57,11 +57,21 @@ fn main() -> miette::Result<()> {
         .map(|s| s.to_string_lossy().into_owned())
         .unwrap_or_else(|| "Norg Document".to_string());
 
-    let full_html_output = html::root::Html::builder()
-        .title(title)
-        .body(|body_builder| body_builder.push(content))
-        .build()
-        .to_string();
+    let escaped_title = norgmill::html::sanitize_html(&title);
+    let full_html_output = format!(
+        r#"<!DOCTYPE html>
+<html>
+<head>
+    <title>{}</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    {}
+</body>
+</html>"#,
+        escaped_title, content
+    );
 
     debug!(
         bytes = full_html_output.len(),

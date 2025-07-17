@@ -74,9 +74,7 @@ impl AppState {
 }
 
 #[instrument(skip(file_path))]
-async fn render_norg_file<'a>(
-    file_path: &std::path::PathBuf,
-) -> miette::Result<(String, html::text_content::Division)> {
+async fn render_norg_file<'a>(file_path: &std::path::PathBuf) -> miette::Result<(String, String)> {
     trace!("rendering norg file");
     let content = tokio::fs::read_to_string(&file_path)
         .await
@@ -122,17 +120,11 @@ async fn read_raw_file(file_path: &std::path::PathBuf) -> Result<Html<String>, h
     };
     match String::from_utf8(content) {
         Ok(raw_string) => {
-            let page = html::root::Html::builder()
-                .body(|body_builder| {
-                    body_builder
-                        .division(|div_builder| {
-                            div_builder
-                                .preformatted_text(|text_builder| text_builder.text(raw_string))
-                        })
-                        .class("raw_div")
-                })
-                .build()
-                .to_string();
+            let escaped_content = norgmill::html::sanitize_html(&raw_string);
+            let page = format!(
+                r#"<html><body class="raw_div"><div><pre>{}</pre></div></body></html>"#,
+                escaped_content
+            );
             Ok(Html(page))
         }
         Err(e) => {
@@ -156,67 +148,64 @@ async fn read_and_render_file(
     }
 }
 
-fn generate_norg_html_page(title: String, content: html::text_content::Division) -> Html<String> {
-    let navigation_buttons = html::content::Header::builder()
-        .class("site-header")
-        .division(|div_b| {
-            div_b
-                .class("header-content")
-                .heading_1(|hb| hb.class("site-title").text(title.clone()))
-                .navigation(|nav_b| {
-                    nav_b
-                        .anchor(|anchor_b| {
-                            anchor_b
-                                .href(constants::CURRENT_WORKSPACE_PATH)
-                                .text("Home")
-                        })
-                        .anchor(|anchor_b| anchor_b.href("#").text("Up"))
-                        .anchor(|anchor_b| anchor_b.href("#").text("Next"))
-                        .anchor(|anchor_b| anchor_b.href("#").text("Prev"))
-                        .anchor(|anchor_b| anchor_b.href("?raw=1").text("Raw"))
-                        .button(|button_b| {
-                            button_b
-                                .class("theme-toggle")
-                                .aria_label("Toggel dark/light mode")
-                                .span(|span_b| span_b.class("icon").text("☀️"))
-                        })
-                })
-        })
-        .build();
-    let body = html::root::Body::builder()
-        .push(navigation_buttons)
-        .main(|main_b| {
-            main_b
-                .class("norg_content")
-                .article(|art_b| art_b.push(content))
-        })
-        .build();
+fn generate_norg_html_page(title: String, content: String) -> Html<String> {
+    let escaped_title = norgmill::html::sanitize_html(&title);
 
-    Html(
-        html::root::Html::builder()
-            .head(|hb| {hb.title(|tb| tb.text(title))
-                  .lang("en")
-                  .meta(|mb| mb.charset("UTF-8"))
-                  .meta(|mb| mb.name("viewport").content("width=device-width, initial-scale=1.0"))
-                  .link(|lb| lb.rel("preconnect").href("https://fonts.googleapis.com"))
-                  .link(|lb| lb.rel("preconnect").href("https://fonts.gstatic.com"))
-                  .link(|lb| lb.rel("icon").href("/favicon.svg").type_("image/svg+xml"))
-                  .link(|lb| lb.rel("stylesheet").href("https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@600;700&family=Source+Serif+Pro:wght@400;700&display=swap"));
-                if cfg!(debug_assertions) {
-                  hb
-                  .link(|link_builder| link_builder.rel("stylesheet").href("/static/style.css"))
-                  .script(|script_b| script_b.src("/static/scripts.js"))
-                }else {
+    let styles_and_scripts = if cfg!(debug_assertions) {
+        r#"<link rel="stylesheet" href="/static/style.css">
+<script src="/static/scripts.js"></script>"#
+    } else {
+        &format!(
+            r#"<style>{}</style>
+<script>{}</script>"#,
+            include_str!("../assets/style.css"),
+            include_str!("../assets/scripts.js")
+        )
+    };
 
-                  hb
-                      .style(|sb| sb.text(include_str!("../assets/style.css")))
-                      .script(|sb| sb.text(include_str!("../assets/scripts.js")))
-                }
-            })
-            .push(body)
-            .build()
-            .to_string(),
-    )
+    let page = format!(
+        r##"<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>{title}</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@600;700&family=Source+Serif+Pro:wght@400;700&display=swap">
+    {styles_and_scripts}
+</head>
+<body>
+    <header class="site-header">
+        <div class="header-content">
+            <h1 class="site-title">{title}</h1>
+            <nav>
+                <a href="{home_path}">Home</a>
+                <a href="#">Up</a>
+                <a href="#">Next</a>
+                <a href="#">Prev</a>
+                <a href="?raw=1">Raw</a>
+                <button class="theme-toggle" aria-label="Toggle dark/light mode">
+                    <span class="icon">☀️</span>
+                </button>
+            </nav>
+        </div>
+    </header>
+    <main class="norg_content">
+        <article>
+            {content}
+        </article>
+    </main>
+</body>
+</html>"##,
+        title = escaped_title,
+        home_path = constants::CURRENT_WORKSPACE_PATH,
+        content = content,
+        styles_and_scripts = styles_and_scripts
+    );
+
+    Html(page)
 }
 
 #[instrument]

@@ -1,70 +1,88 @@
 //! basic markup tokens rendering
 
+use std::fmt::Write;
 use tracing::{instrument, trace, warn};
 
 use super::paragraph;
 
 type Modifier = char;
 
-#[instrument(skip(content, builder))]
-pub fn render_attached<'b>(
+#[instrument(skip(content, output))]
+pub fn render_attached(
     modifier: Modifier,
     content: &[norg::ParagraphSegment],
-    builder: &'b mut html::text_content::builders::ParagraphBuilder,
-) -> &'b mut html::text_content::builders::ParagraphBuilder {
+    output: &mut String,
+) {
     // render segments first
-    let segments_collector = paragraph::render_paragraph_to_string(content);
+    let segments_collector = String::new();
+    content
+        .iter()
+        .for_each(|seg| paragraph::render_segment(seg, output));
+
+    // sanitize the content before writing to output
+    let sanitized_content = crate::html::sanitize_html(&segments_collector);
 
     // apply modifiers for rendered segments
     match modifier {
         '*' => {
             trace!("rendering bold text");
-            builder.bold(|bb| bb.text(segments_collector));
+            write!(output, "<strong>{}</strong>", sanitized_content);
         }
         '/' => {
             trace!("rendering italic text");
-            builder.italic(|ib| ib.text(segments_collector));
+            write!(output, "<em>{}</em>", sanitized_content);
         }
         '-' => {
             trace!("rendering striked text");
-            builder.strike_through(|b| b.text(segments_collector));
+            write!(output, "<s>{}</s>", sanitized_content);
         }
         '_' => {
             trace!("rendering underlined text");
-            builder.underline(|b| b.text(segments_collector));
+            write!(output, "<u>{}</u>", sanitized_content);
         }
         '!' => {
             trace!("rendering spoiler text");
-            builder.span(|b| b.text(segments_collector).class("spoiler"));
+            write!(
+                output,
+                "<span class=\"spoiler\">{}</span>",
+                sanitized_content
+            );
         }
         '`' => {
             trace!("rendering inline code");
-            builder.code(|b| b.text(segments_collector));
+            write!(output, "<code>{}</code>", sanitized_content);
         }
         '^' => {
             trace!("rendering superscript");
-            builder.super_script(|b| b.text(segments_collector));
+            write!(output, "<sup>{}</sup>", sanitized_content);
         }
         ',' => {
             trace!("rendering subscript");
-            builder.sub_script(|b| b.text(segments_collector));
+            write!(output, "<sub>{}</sub>", sanitized_content);
         }
         '$' => {
             trace!("rendering math equation");
-            builder.span(|b| b.text(segments_collector).class("math"));
+            write!(output, "<span class=\"math\">{}</span>", sanitized_content);
         }
         '&' => {
             trace!("rendering variable");
-            builder.span(|b| b.text(segments_collector).class("variable"));
+            write!(
+                output,
+                "<span class=\"variable\">{}</span>",
+                sanitized_content
+            );
         }
         '%' => {
             trace!("rendering commented text");
-            builder.span(|b| b.text(segments_collector).class("comment"));
+            write!(
+                output,
+                "<span class=\"comment\">{}</span>",
+                sanitized_content
+            );
         }
 
         _ => {
             warn!("unknown modifier");
         }
     };
-    builder
 }

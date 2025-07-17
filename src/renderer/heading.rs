@@ -1,8 +1,9 @@
 //! module which does rendering of headings
 use crate::renderer::paragraph;
-use tracing::{debug, instrument, trace};
+use std::fmt::Write;
+use tracing::{debug, instrument, trace, warn};
 
-#[instrument(skip(content, footnotes))]
+#[instrument(skip(content, footnotes, output))]
 pub fn render_heading(
     level: u16,
     title: Vec<norg::ParagraphSegment>,
@@ -13,35 +14,39 @@ pub fn render_heading(
         Vec<norg::DetachedModifierExtension>,
         Vec<norg::NorgASTFlat>,
     )>,
-) -> html::text_content::Division {
+    output: &mut String,
+) {
     trace!("rendering heading");
 
-    let mut div_builder = html::text_content::Division::builder();
-    div_builder.class("heading_block");
+    write!(output, "<div class=\"heading_block\">");
 
-    let title_text = paragraph::render_paragraph_to_string(&title);
+    let title_text = paragraph::render_segments(&title);
     debug!(?title, "adding heading");
-    // this needs to be applied first since modifiers which are applied at the end should not be applied to inner lists
-    extensions.into_iter().for_each(|extension| {
-        div_builder.span(|spb| super::extensions::apply_extension(extension, spb));
-    });
+
+    // Apply extensions first since modifiers which are applied at the end should not be applied to inner lists
+    for extension in extensions {
+        warn!(?extension, "unimplemented for extensions of headings");
+    }
+
     let heading_class = format!("heading_{level}");
+    let sanitized_title = crate::html::sanitize_html(&title_text);
     match level {
-        1 => div_builder.heading_1(|hb| hb.class(heading_class).text(title_text)),
-        2 => div_builder.heading_2(|hb| hb.class(heading_class).text(title_text)),
-        3 => div_builder.heading_3(|hb| hb.class(heading_class).text(title_text)),
-        4 => div_builder.heading_4(|hb| hb.class(heading_class).text(title_text)),
-        5 => div_builder.heading_5(|hb| hb.class(heading_class).text(title_text)),
-        _ => div_builder.heading_6(|hb| hb.class(heading_class).text(title_text)),
+        1..5 => write!(
+            output,
+            "<h{level} class=\"{}\">{}</h{level}>",
+            heading_class, sanitized_title
+        ),
+        _ => write!(
+            output,
+            "<h6 class=\"{}\">{}</h6>",
+            heading_class, sanitized_title
+        ),
     };
 
     if !content.is_empty() {
         let mut content_iter = content.into_iter().peekable();
-        // this has to be converted to string.
-        // when there are lot of nested divisions it causes stack overflow.
-        // usually heading contents will have lots of nested content, so better to convert it to string and push
-        // FIX: fix needs to be done in the html library, if this is not converted to string then it causes stack overflow
-        div_builder.push(super::render_ast(&mut content_iter, footnotes).to_string());
+        super::render_ast(&mut content_iter, footnotes, output);
     }
-    div_builder.build()
+
+    write!(output, "</div>");
 }
