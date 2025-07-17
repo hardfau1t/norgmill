@@ -19,57 +19,55 @@ pub fn render_attached(
         .iter()
         .try_for_each(|seg| paragraph::render_segment(seg, &mut segments_collector))?;
 
-    // sanitize the content before writing to output
-    let sanitized_content = crate::html::sanitize_html(&segments_collector);
 
     // apply modifiers for rendered segments
     match modifier {
         '*' => {
             trace!("rendering bold text");
-            write!(output, "<strong>{}</strong>", sanitized_content)?;
+            write!(output, "<strong>{}</strong>", segments_collector)?;
         }
         '/' => {
             trace!("rendering italic text");
-            write!(output, "<em>{}</em>", sanitized_content)?;
+            write!(output, "<em>{}</em>", segments_collector)?;
         }
         '-' => {
             trace!("rendering striked text");
-            write!(output, "<s>{}</s>", sanitized_content)?;
+            write!(output, "<s>{}</s>", segments_collector)?;
         }
         '_' => {
             trace!("rendering underlined text");
-            write!(output, "<u>{}</u>", sanitized_content)?;
+            write!(output, "<u>{}</u>", segments_collector)?;
         }
         '!' => {
             trace!("rendering spoiler text");
             write!(
                 output,
                 "<span class=\"spoiler\">{}</span>",
-                sanitized_content
+                segments_collector
             )?;
         }
         '`' => {
             trace!("rendering inline code");
-            write!(output, "<code>{}</code>", sanitized_content)?;
+            write!(output, "<code>{}</code>", segments_collector)?;
         }
         '^' => {
             trace!("rendering superscript");
-            write!(output, "<sup>{}</sup>", sanitized_content)?;
+            write!(output, "<sup>{}</sup>", segments_collector)?;
         }
         ',' => {
             trace!("rendering subscript");
-            write!(output, "<sub>{}</sub>", sanitized_content)?;
+            write!(output, "<sub>{}</sub>", segments_collector)?;
         }
         '$' => {
             trace!("rendering math equation");
-            write!(output, "<span class=\"math\">{}</span>", sanitized_content)?;
+            write!(output, "<span class=\"math\">{}</span>", segments_collector)?;
         }
         '&' => {
             trace!("rendering variable");
             write!(
                 output,
                 "<span class=\"variable\">{}</span>",
-                sanitized_content
+                segments_collector
             )?;
         }
         '%' => {
@@ -77,7 +75,7 @@ pub fn render_attached(
             write!(
                 output,
                 "<span class=\"comment\">{}</span>",
-                sanitized_content
+                segments_collector
             )?;
         }
 
