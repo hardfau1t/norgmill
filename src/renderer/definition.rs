@@ -29,7 +29,8 @@ pub fn render_definition(
     for cont_ast in content {
         match cont_ast {
             norg::NorgASTFlat::Paragraph(paras) => paras
-                .iter().try_for_each(|seg| paragraph::render_segment(seg, output))?,
+                .iter()
+                .try_for_each(|seg| paragraph::render_segment(seg, output))?,
             _ => {
                 warn!(?cont_ast, "Unsupported token found inside definition");
             }

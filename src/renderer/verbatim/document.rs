@@ -3,7 +3,7 @@
 use std::fmt::Write;
 use tracing::{instrument, trace, warn};
 
-fn parse_document(s: &str, output: &mut String)->std::fmt::Result {
+fn parse_document(s: &str, output: &mut String) -> std::fmt::Result {
     for line in s.lines() {
         if let Some((key, value)) = line.trim().split_once(':') {
             match key.trim() {
@@ -47,7 +47,12 @@ fn parse_document(s: &str, output: &mut String)->std::fmt::Result {
 }
 
 #[instrument(skip(content, output))]
-pub fn render_document(name: &[String], params: Vec<String>, content: String, output: &mut String)->std::fmt::Result {
+pub fn render_document(
+    name: &[String],
+    params: Vec<String>,
+    content: String,
+    output: &mut String,
+) -> std::fmt::Result {
     trace!("rendering document");
     match name.first() {
         Some(s) if s == "meta" => {

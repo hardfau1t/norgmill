@@ -1,7 +1,10 @@
 use std::fmt::Write;
 use tracing::{debug, trace, warn};
 
-fn apply_extensions(extensions: Vec<norg::DetachedModifierExtension>, output: &mut String) -> Result<bool, std::fmt::Error> {
+fn apply_extensions(
+    extensions: Vec<norg::DetachedModifierExtension>,
+    output: &mut String,
+) -> Result<bool, std::fmt::Error> {
     let mut add_todo = false;
     for token in extensions {
         match token {

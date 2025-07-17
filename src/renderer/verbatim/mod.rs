@@ -9,7 +9,7 @@ pub fn render_paragraph(
     params: Vec<String>,
     content: String,
     target: &mut String,
-)->std::fmt::Result {
+) -> std::fmt::Result {
     if let Some((first_name, name_etc)) = name.split_first() {
         match first_name.as_str() {
             "code" => {

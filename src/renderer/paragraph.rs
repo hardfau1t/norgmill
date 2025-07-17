@@ -3,7 +3,9 @@ use tracing::{trace, warn};
 
 use super::{basic, link};
 
-pub fn render_segments(para_segments: &[norg::ParagraphSegment]) -> Result<String, std::fmt::Error> {
+pub fn render_segments(
+    para_segments: &[norg::ParagraphSegment],
+) -> Result<String, std::fmt::Error> {
     let mut output = String::new();
     for segment in para_segments {
         render_segment(segment, &mut output)?;
@@ -11,17 +13,19 @@ pub fn render_segments(para_segments: &[norg::ParagraphSegment]) -> Result<Strin
     Ok(output)
 }
 
-pub fn render_paragraph(para_segments: &[norg::ParagraphSegment], output: &mut String)->std::fmt::Result {
+pub fn render_paragraph(
+    para_segments: &[norg::ParagraphSegment],
+    output: &mut String,
+) -> std::fmt::Result {
     output.push_str("<p>");
     for segment in para_segments {
         render_segment(segment, output)?;
     }
     output.push_str("</p>");
     Ok(())
-
 }
 
-pub fn render_segment(para: &norg::ParagraphSegment, output: &mut String)->std::fmt::Result {
+pub fn render_segment(para: &norg::ParagraphSegment, output: &mut String) -> std::fmt::Result {
     trace!(para=?para,"rendering paragraph");
     match para {
         norg::ParagraphSegment::Token(norg::ParagraphSegmentToken::Text(t)) => {

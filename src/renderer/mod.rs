@@ -14,7 +14,7 @@ mod quote;
 mod table;
 mod verbatim;
 
-fn render_ast<'t, 'd, 's, Tokens>(
+fn render_ast<Tokens>(
     tokens: &mut Peekable<Tokens>,
     footnotes: &mut Vec<(
         Vec<norg::ParagraphSegment>,
@@ -214,7 +214,8 @@ pub fn parse_and_render_norg(input: &str) -> miette::Result<String> {
                 let title_string = paragraph::render_segments(&title)?;
                 output.push_str(&format!("<li id=\"{}_footnote\">", title_string));
                 foot_note_paras
-                    .into_iter().try_for_each(|fnote| render_flat_ast(&fnote, &mut output))?;
+                    .into_iter()
+                    .try_for_each(|fnote| render_flat_ast(&fnote, &mut output))?;
                 // TODO: create a backref for each footnote
                 let backref_tag = format!("#{}_footnote_backref", title_string);
                 output.push_str(&format!(

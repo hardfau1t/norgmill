@@ -16,7 +16,8 @@ pub fn render_attached(
     // render segments first
     let segments_collector = String::new();
     content
-        .iter().try_for_each(|seg| paragraph::render_segment(seg, output))?;
+        .iter()
+        .try_for_each(|seg| paragraph::render_segment(seg, output))?;
 
     // sanitize the content before writing to output
     let sanitized_content = crate::html::sanitize_html(&segments_collector);

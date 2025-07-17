@@ -19,11 +19,9 @@ pub mod paths {
     use const_format::concatcp;
 
     /// path for rendering root of current workspace
-    pub const CURRENT_WORKSPACE_ROOT: &str =
-        concatcp!(CURRENT_WORKSPACE_PATH, "/index.norg");
+    pub const CURRENT_WORKSPACE_ROOT: &str = concatcp!(CURRENT_WORKSPACE_PATH, "/index.norg");
     /// path for rendering any file from current workspace
-    pub const CURRENT_WORKSPACE_FILE: &str =
-        concatcp!(CURRENT_WORKSPACE_PATH, "/*file_path");
+    pub const CURRENT_WORKSPACE_FILE: &str = concatcp!(CURRENT_WORKSPACE_PATH, "/*file_path");
     /// load files from root of the file system
     pub const SYSTEM_FILES: &str = concatcp!(SYSTEM_PATH, "/*file_path");
     /// load files from root of the file system
