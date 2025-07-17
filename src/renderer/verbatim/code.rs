@@ -7,8 +7,8 @@ pub fn render_code<'n, 'd>(
     params: Vec<String>,
     content: String,
     target: &mut String,
-) {
+)->std::fmt::Result {
     let language = params.first().map_or("text", |l| l.as_str());
     debug!("found language: {language}");
-    write!(target, "<pre class={language}>{content}</pre>").expect("string formating is infallible")
+    write!(target, "<pre class={language}>{content}</pre>")
 }

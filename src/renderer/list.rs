@@ -1,7 +1,7 @@
 use std::fmt::Write;
 use tracing::{debug, trace, warn};
 
-fn apply_extensions(extensions: Vec<norg::DetachedModifierExtension>, output: &mut String) -> bool {
+fn apply_extensions(extensions: Vec<norg::DetachedModifierExtension>, output: &mut String) -> Result<bool, std::fmt::Error> {
     let mut add_todo = false;
     for token in extensions {
         match token {
@@ -24,7 +24,7 @@ fn apply_extensions(extensions: Vec<norg::DetachedModifierExtension>, output: &m
                     norg::TodoStatus::Canceled => "canceled",
                 };
                 debug!(status, "Rendering TodoStatus");
-                write!(output, " data-status=\"{}\"", status).unwrap();
+                write!(output, " data-status=\"{}\"", status)?;
                 add_todo = true;
             }
             norg::DetachedModifierExtension::Priority(_) => todo!(),
@@ -33,7 +33,7 @@ fn apply_extensions(extensions: Vec<norg::DetachedModifierExtension>, output: &m
             norg::DetachedModifierExtension::StartDate(_) => todo!(),
         }
     }
-    add_todo
+    Ok(add_todo)
 }
 
 #[derive(Debug)]
@@ -60,9 +60,9 @@ pub fn render_list_element(
     kind: ListKind,
     extensions: Vec<norg::DetachedModifierExtension>,
     output: &mut String,
-) {
+) -> std::fmt::Result {
     let mut text_content = String::new();
-    super::render_flat_ast(&text, &mut text_content);
+    super::render_flat_ast(&text, &mut text_content)?;
 
     // TODO: replace this and take from root footnote builder
     // but footnote is not allowed in list element
@@ -70,15 +70,15 @@ pub fn render_list_element(
     let mut inner_content_rendered = String::new();
     if !inner_content.is_empty() {
         let mut tokens = inner_content.into_iter().peekable();
-        super::render_ast(&mut tokens, &mut footnotes, &mut inner_content_rendered);
+        super::render_ast(&mut tokens, &mut footnotes, &mut inner_content_rendered)?;
     }
     if !footnotes.is_empty() {
         warn!("Footnotes are present in list items which shouldn't be possible");
     }
 
     // Start list item with extensions as attributes
-    write!(output, "<li class={kind}_l{level}");
-    let add_todo = apply_extensions(extensions, output);
+    write!(output, "<li class={kind}_l{level}")?;
+    let add_todo = apply_extensions(extensions, output)?;
     output.push_str(">");
 
     // Add status indicator span for todo items
@@ -95,4 +95,5 @@ pub fn render_list_element(
     }
 
     output.push_str("</li>");
+    Ok(())
 }

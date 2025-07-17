@@ -15,12 +15,12 @@ pub fn render_heading(
         Vec<norg::NorgASTFlat>,
     )>,
     output: &mut String,
-) {
+) -> std::fmt::Result {
     trace!("rendering heading");
 
-    write!(output, "<div class=\"heading_block\">");
+    write!(output, "<div class=\"heading_block\">")?;
 
-    let title_text = paragraph::render_segments(&title);
+    let title_text = paragraph::render_segments(&title)?;
     debug!(?title, "adding heading");
 
     // Apply extensions first since modifiers which are applied at the end should not be applied to inner lists
@@ -35,18 +35,19 @@ pub fn render_heading(
             output,
             "<h{level} class=\"{}\">{}</h{level}>",
             heading_class, sanitized_title
-        ),
+        )?,
         _ => write!(
             output,
             "<h6 class=\"{}\">{}</h6>",
             heading_class, sanitized_title
-        ),
+        )?,
     };
 
     if !content.is_empty() {
         let mut content_iter = content.into_iter().peekable();
-        super::render_ast(&mut content_iter, footnotes, output);
+        super::render_ast(&mut content_iter, footnotes, output)?;
     }
 
-    write!(output, "</div>");
+    write!(output, "</div>")?;
+    Ok(())
 }

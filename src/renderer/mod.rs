@@ -1,5 +1,6 @@
 use std::iter::Peekable;
 
+use miette::{Context, IntoDiagnostic};
 use tracing::{debug, error, trace, warn};
 
 mod basic;
@@ -21,7 +22,8 @@ fn render_ast<'t, 'd, 's, Tokens>(
         Vec<norg::NorgASTFlat>,
     )>,
     output: &mut String,
-) where
+) -> std::fmt::Result
+where
     Tokens: Iterator<Item = norg::NorgAST>,
 {
     trace!("rendering ast");
@@ -29,7 +31,7 @@ fn render_ast<'t, 'd, 's, Tokens>(
     while let Some(token) = tokens.next() {
         match token {
             norg::NorgAST::Paragraph(p) => {
-                paragraph::render_paragraph(&p, output);
+                paragraph::render_paragraph(&p, output)?;
             }
             norg::NorgAST::NestableDetachedModifier {
                 modifier_type,
@@ -40,7 +42,7 @@ fn render_ast<'t, 'd, 's, Tokens>(
             } => {
                 match modifier_type {
                     norg::NestableDetachedModifier::Quote => {
-                        quote::render_quote(level, extensions, text, content, output);
+                        quote::render_quote(level, extensions, text, content, output)?;
                     }
                     norg::NestableDetachedModifier::UnorderedList => {
                         output.push_str("<ul>");
@@ -51,7 +53,7 @@ fn render_ast<'t, 'd, 's, Tokens>(
                             list::ListKind::Unordered,
                             extensions,
                             output,
-                        );
+                        )?;
                         // check if next tokens are also belongs to this list
                         while let Some(norg::NorgAST::NestableDetachedModifier {
                             level: n_level,
@@ -75,7 +77,7 @@ fn render_ast<'t, 'd, 's, Tokens>(
                                 list::ListKind::Unordered,
                                 n_extensions,
                                 output,
-                            );
+                            )?;
                         }
                         output.push_str("</ul>");
                     }
@@ -88,7 +90,7 @@ fn render_ast<'t, 'd, 's, Tokens>(
                             list::ListKind::Ordered,
                             extensions,
                             output,
-                        );
+                        )?;
                         // check if the next items are also part of list
                         while let Some(norg::NorgAST::NestableDetachedModifier {
                             level: n_level,
@@ -112,7 +114,7 @@ fn render_ast<'t, 'd, 's, Tokens>(
                                 list::ListKind::Ordered,
                                 n_extensions,
                                 output,
-                            );
+                            )?;
                         }
                         output.push_str("</ul>");
                     } // no need to check if the item is of different type, if it is then it will be flushed at the beginning of the loop
@@ -128,7 +130,7 @@ fn render_ast<'t, 'd, 's, Tokens>(
                 match modifier_type {
                     norg::RangeableDetachedModifier::Definition => {
                         output.push_str("<dl>");
-                        definition::render_definition(title, extensions, content, output);
+                        definition::render_definition(title, extensions, content, output)?;
                         // if there are more definitions then add it to the same list
                         // next_if cannot be replaced with next(), if you do that then when let fails to match that token is lost
                         while let Some(norg::NorgAST::RangeableDetachedModifier {
@@ -145,7 +147,7 @@ fn render_ast<'t, 'd, 's, Tokens>(
                                 }
                             )
                         }) {
-                            definition::render_definition(title, extensions, content, output);
+                            definition::render_definition(title, extensions, content, output)?;
                         }
 
                         output.push_str("</dl>");
@@ -164,7 +166,7 @@ fn render_ast<'t, 'd, 's, Tokens>(
                 extensions,
                 content,
             } => {
-                heading::render_heading(level, title, extensions, content, footnotes, output);
+                heading::render_heading(level, title, extensions, content, footnotes, output)?;
             }
             //norg::NorgAST::CarryoverTag { tag_type, name, parameters, next_object } => todo!(),
             norg::NorgAST::VerbatimRangedTag {
@@ -173,7 +175,7 @@ fn render_ast<'t, 'd, 's, Tokens>(
                 content,
             } => {
                 // rendering code/document tag
-                verbatim::render_paragraph(name, parameters, content, output)
+                verbatim::render_paragraph(name, parameters, content, output)?;
             }
             //norg::NorgAST::RangedTag { name, parameters, content } => todo!(),
             //norg::NorgAST::InfirmTag { name, parameters } => todo!(),
@@ -182,6 +184,7 @@ fn render_ast<'t, 'd, 's, Tokens>(
             }
         };
     }
+    Ok(())
 }
 
 pub fn parse_and_render_norg(input: &str) -> miette::Result<String> {
@@ -195,22 +198,25 @@ pub fn parse_and_render_norg(input: &str) -> miette::Result<String> {
     let mut output = String::with_capacity(input.len() * 2);
     output.push_str("<div class=norg_content>");
 
-    render_ast(&mut token_iterator, &mut footnotes, &mut output);
+    render_ast(&mut token_iterator, &mut footnotes, &mut output)
+        .into_diagnostic()
+        .wrap_err("Rendering ast, with ignoring fmt errors")?;
     output.push_str("</div>");
 
     if !footnotes.is_empty() {
         output.push_str("<footer><ol>");
         footnotes
             .into_iter()
-            .for_each(|(title, extensions, foot_note_paras)| {
+            .map(|(title, extensions, foot_note_paras)| {
                 if !extensions.is_empty() {
                     warn!(?extensions, "extensions are not yet supported for footer");
                 }
-                let title_string = paragraph::render_segments(&title);
+                let title_string = paragraph::render_segments(&title)?;
                 output.push_str(&format!("<li id=\"{}_footnote\">", title_string));
-                foot_note_paras.into_iter().for_each(|fnote| {
-                    render_flat_ast(&fnote, &mut output);
-                });
+                foot_note_paras
+                    .into_iter()
+                    .map(|fnote| render_flat_ast(&fnote, &mut output))
+                    .collect::<std::fmt::Result>()?;
                 // TODO: create a backref for each footnote
                 let backref_tag = format!("#{}_footnote_backref", title_string);
                 output.push_str(&format!(
@@ -218,19 +224,23 @@ pub fn parse_and_render_norg(input: &str) -> miette::Result<String> {
                     backref_tag, backref_tag
                 ));
                 output.push_str("</li>");
-            });
+                Ok(())
+            })
+            .collect::<std::fmt::Result>()
+            .into_diagnostic()
+            .wrap_err("Couldn't add foooter")?;
         output.push_str("</ol></footer>")
     }
     Ok(output)
 }
 
 /// this currently used only in html list and definitions items so some of the items may not work
-fn render_flat_ast(ast: &norg::NorgASTFlat, output: &mut String) {
+fn render_flat_ast(ast: &norg::NorgASTFlat, output: &mut String) -> std::fmt::Result {
     trace!(?ast, "rendering flat ast");
     match ast {
         norg::NorgASTFlat::Paragraph(paras) => {
             // Create a single paragraph for all content in list items
-            paragraph::render_paragraph(paras, output);
+            paragraph::render_paragraph(paras, output)?;
         }
         _ => {
             error!(
@@ -238,4 +248,5 @@ fn render_flat_ast(ast: &norg::NorgASTFlat, output: &mut String) {
             );
         }
     }
+    Ok(())
 }

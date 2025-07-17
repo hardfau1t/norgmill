@@ -9,16 +9,16 @@ pub fn render_paragraph(
     params: Vec<String>,
     content: String,
     target: &mut String,
-) {
+)->std::fmt::Result {
     if let Some((first_name, name_etc)) = name.split_first() {
         match first_name.as_str() {
             "code" => {
                 trace!("rendering code block");
-                code::render_code(name_etc, params, content, target);
+                code::render_code(name_etc, params, content, target)?;
             }
             "document" => {
                 trace!("rendering document");
-                document::render_document(name_etc, params, content, target);
+                document::render_document(name_etc, params, content, target)?;
             }
             _ => {
                 warn!("unknown tag: {first_name}, so just pushing the content as it is");
@@ -27,4 +27,5 @@ pub fn render_paragraph(
     } else {
         warn!("tag without name found don't know what to do so just pushing the content as it is");
     };
+    Ok(())
 }

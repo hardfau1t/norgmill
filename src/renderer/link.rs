@@ -10,7 +10,7 @@ pub fn render_link(
     targets: &[norg::LinkTarget],
     description_segments: Option<&[norg::ParagraphSegment]>,
     output: &mut String,
-) {
+) -> std::fmt::Result {
     trace!("rendering link");
     let norg_file_path = file_path
         .map(|norg_path| {
@@ -74,7 +74,9 @@ pub fn render_link(
                 norg::LinkTarget::Heading { level, title } => {
                     let link = format!(
                         "#{}_h{}",
-                        paragraph::render_segments(title).replace(' ', "_"),
+                        paragraph::render_segments(title)
+                            .expect("string formatting is infallible")
+                            .replace(' ', "_"),
                         level
                     );
                     Some(link)
@@ -85,11 +87,15 @@ pub fn render_link(
                 }
                 norg::LinkTarget::Footnote(title) => Some(format!(
                     "#{}_f",
-                    paragraph::render_segments(title).replace(' ', "_")
+                    paragraph::render_segments(title)
+                        .expect("string formatting is infallible")
+                        .replace(' ', "_")
                 )),
                 norg::LinkTarget::Definition(title) => Some(format!(
                     "#{}_d",
-                    paragraph::render_segments(title).replace(' ', "_")
+                    paragraph::render_segments(title)
+                        .expect("string formatting is infallible")
+                        .replace(' ', "_")
                 )),
                 norg::LinkTarget::Wiki(title) => {
                     error!(target = ?title, "wiki links are not yet supported");
@@ -152,8 +158,8 @@ pub fn render_link(
 
     let title = description_segments
         .map(paragraph::render_segments)
-        .unwrap_or_else(|| href.clone());
-    write!(output, "<a href={href}>{title}</a>");
+        .unwrap_or_else(|| Ok(href.clone()))?;
+    write!(output, "<a href={href}>{title}</a>")
 }
 
 // TODO: Create a function to generate fragment tags, that will be used to create anchor tags and link to that tag

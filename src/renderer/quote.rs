@@ -9,14 +9,14 @@ pub fn render_quote(
     text: Box<norg::NorgASTFlat>,
     inner_quotes: Vec<norg::NorgAST>,
     output: &mut String,
-) {
+) -> std::fmt::Result {
     trace!("rendering quote");
     if !extensions.is_empty() {
         warn!("Quote has extensions which is not supposed be, if things have changed, then raise issue to fix this");
     }
 
     write!(output, "<blockquote>").unwrap();
-    super::render_flat_ast(&text, output);
+    super::render_flat_ast(&text, output)?;
 
     for inner_quote in inner_quotes {
         // only quotes are allowed in quotes,
@@ -35,11 +35,11 @@ pub fn render_quote(
                 inner_text,
                 inner_content,
                 output,
-            );
+            )?;
         } else {
             error!(tokens=?inner_quote, "Unexpected tokens found in quotes, only quotes are allowed")
         }
     }
 
-    write!(output, "</blockquote>").unwrap();
+    write!(output, "</blockquote>")
 }
